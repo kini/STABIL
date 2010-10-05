@@ -26,7 +26,7 @@
 #define maxvert 200
 #define maxrank maxvert*maxvert
 #define memlength maxrank*5
-#define mlong int				/* to fix an MSDOS artefact */
+#define mlong int																/* to fix an MSDOS artefact */
 FILE *f;
 struct triple {
 	int col;
@@ -47,7 +47,7 @@ void main(int narg, char *arg[10])
 	long time;
 	float t;
 	long start_time, end_time;
-	f = fopen(arg[1], "r");		/* char */
+	f = fopen(arg[1], "r");														/* char */
 	if (f == NULL) {
 		printf("\n file does not exist\n");
 		exit(0);
@@ -70,7 +70,7 @@ void main(int narg, char *arg[10])
 	for (i = 0; i < vert; ++i) {
 		if (color[graph[i][i]]->row < 0)
 			color[graph[i][i]]->row = j++;
-	};
+	}
 	printf("\n\n number of cells:  %6d", j);
 	for (i = 0; i < rank; ++i)
 		if (color[i]->row < 0)
@@ -86,10 +86,10 @@ void main(int narg, char *arg[10])
 					printf(" %d ", graph[i][j]);
 				else
 					printf("%d ", graph[i][j]);
-			};
+			}
 		}
 		printf("\n");
-	};
+	}
 /* printf("\n\n%ld msec \n\n",end_time);*/
 }
 
@@ -108,8 +108,8 @@ struct edge *color[maxrank];
 				printf("please check your input!\n");
 				vert = 0;
 				return (0);
-			};
-		};
+			}
+		}
 	for (free = space; free < space + rank; free++)
 		free->row = 0;
 	for (i = 0; i < vert; ++i)
@@ -128,14 +128,14 @@ struct edge *color[maxrank];
 				return (0);
 			} else
 				space[graph[j][i]].row = 2;
-		};
+		}
 	for (free = space; free < space + rank; free++) {
 		if (free->row == 0) {
 			printf("please check your input!\n");
 			vert = 0;
 			return (0);
-		};
-	};
+		}
+	}
 
 	free = &space[0];
 	for (k = 0; k < maxrank; k++)
@@ -171,22 +171,21 @@ struct edge *color[maxrank];
 	fflush(stdout);
 /* for (k=0; k<maxrank; k++)
       actcol[k]=1;  */
-	do {						/*  until new colors would not appear */
-		truth = 0;				/* new colors were not appear */
+	do {																		/*  until new colors would not appear */
+		truth = 0;																/* new colors were not appear */
 		newrank = rank;
-		for (k = 0; k < rank; k++) {	/* cycle on colors */
+		for (k = 0; k < rank; k++) {											/* cycle on colors */
 			overfl = 0;
-			klass = 0;			/* number of new colors */
+			klass = 0;															/* number of new colors */
 /*    edgeprint (rank,color);  */
-			p = 0;				/*  the begin of newgamma */
+			p = 0;																/*  the begin of newgamma */
 			*(gamma) = k;
 			w = color[k];
-			o = w;				/* the previous edge of color k  */
+			o = w;																/* the previous edge of color k  */
 			if (w->ptr == NULL)
-				continue;		/* new k  */
+				continue;														/* new k  */
 			do {
-				triangl(graph, w->row, w->col, gamma + p, rank,
-						vert /*,actcol */ );
+				triangl(graph, w->row, w->col, gamma + p, rank, vert /*,actcol */ );
 				/*     if (p==0)   *//* the first edge of colour k */
 /*      {
       for (i=5; i<*(gamma+1)*3+5; i+=3)
@@ -194,7 +193,7 @@ struct edge *color[maxrank];
 	  if (actcol[*(gamma+i)]%2==1) break;
 	  if (actcol[*(gamma+i+1)]%2==1) break;
 	 }
-								      if (i==*(gamma+1)*3+5) continue; *//*  new k  */
+																								      if (i==*(gamma+1)*3+5) continue; *//*  new k  */
 /*      } */
 				oldnrank = newrank;
 				oldp = p;
@@ -219,7 +218,7 @@ struct edge *color[maxrank];
 					o = w;
 				w = o->ptr;
 			}
-			while (w != NULL);	/* the last edge of color #k */
+			while (w != NULL);													/* the last edge of color #k */
 			if (overfl == 1)
 				newrank++;
 			for (i = rank; i < newrank; i++) {
@@ -230,7 +229,7 @@ struct edge *color[maxrank];
 				}
 			}
 			rank = newrank;
-		}						/* next color */
+		}																		/* next color */
 		if (truth == 0)
 			break;
 		*arank = rank;
@@ -253,7 +252,7 @@ mlong *newgamma;
 	int s, t, p, numval, q;
 	struct triple cnst[maxvert], *freemem;
 	mlong *nnn;
-	numval = 0;					/* the number of nonzero const */
+	numval = 0;																	/* the number of nonzero const */
 	freemem = &cnst[0];
 	for (p = 0; p < rank; p++)
 		lines[p] = NULL;
@@ -280,20 +279,20 @@ mlong *newgamma;
 pack(struct triple **line, struct triple **free, int t)
 {
 	struct triple *w, *o;
-	if (*line == NULL) {		/* t is the first column in the line s */
+	if (*line == NULL) {														/* t is the first column in the line s */
 		*line = *free;
 		(*line)->col = t;
 		(*line)->val = 1;
 		(*line)->ptr = NULL;
 		(*free)++;
 	} else {
-		if ((*line)->col > t) {	/* the first column in the line > t */
+		if ((*line)->col > t) {													/* the first column in the line > t */
 			(*free)->col = t;
 			(*free)->val = 1;
 			(*free)->ptr = *line;
 			*line = *free;
 			(*free)++;
-		} else {				/* the first column in the line <=t  */
+		} else {																/* the first column in the line <=t  */
 
 			w = *line;
 			while (w != NULL) {
@@ -333,13 +332,13 @@ int *ac, *ap, *aklass, *as, *anewrank, *atruth, k;
 	klass = *aklass;
 	truth = *atruth;
 	newrank = *anewrank;
-	oldp = p;					/* the begin of newgamma */
-	q = 0;						/* the begin of searching in gamma */
+	oldp = p;																	/* the begin of newgamma */
+	q = 0;																		/* the begin of searching in gamma */
 	if (klass) {
 
 		while (*(gamma + q + 1) != *(gamma + p + 1)) {
 			if (*(gamma + q + 1) > *(gamma + p + 1)) {
-				if (*(gamma + q + 2) == -1) {	/*   prev==-1  */
+				if (*(gamma + q + 2) == -1) {									/*   prev==-1  */
 					*(gamma + q + 2) = p;
 					*(gamma + p + 2) = -1;
 					*(gamma + p) = newrank;
@@ -368,7 +367,7 @@ int *ac, *ap, *aklass, *as, *anewrank, *atruth, k;
 						q = *(gamma + q + 2);
 				}
 			} else {
-				if (*(gamma + q + 3) == -1) {	/* next==-1  */
+				if (*(gamma + q + 3) == -1) {									/* next==-1  */
 					*(gamma + q + 3) = p;
 					*(gamma + p + 3) = -1;
 					*(gamma + p) = newrank;
@@ -408,12 +407,12 @@ int *ac, *ap, *aklass, *as, *anewrank, *atruth, k;
 				if (*(gamma + q) != *(gamma + p))
 					break;
 			}
-			if (t == dl * 3) {	/* old class  */
-				c = *(gamma + oldq);	/* colour */
+			if (t == dl * 3) {													/* old class  */
+				c = *(gamma + oldq);											/* colour */
 				p = oldp;
 				break;
 			}
-			if (nexte == -1) {	/* create a new class */
+			if (nexte == -1) {													/* create a new class */
 				klass++;
 				*(gamma + oldp) = newrank;
 				c = newrank;
@@ -430,7 +429,7 @@ int *ac, *ap, *aklass, *as, *anewrank, *atruth, k;
 			p = oldp;
 		} while (q != -1);
 	} else {
-		klass++;				/* the first edge of colour k  */
+		klass++;																/* the first edge of colour k  */
 		*(gamma + p + 4) = -1;
 		*(gamma + p + 3) = -1;
 		*(gamma + p + 2) = -1;

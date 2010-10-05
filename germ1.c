@@ -39,23 +39,23 @@
 		     q=xp->first;\
 		     while(q!=xp->last) { j=q->c; q->c=col;\
 		      col+=(j==q->next->c)?0:1; q=q->next;}\
-		     q->c=col; s ; yp=xp;}; xp++;}
+		     q->c=col; s ; yp=xp;} xp++;}
 
 #define PICK if(pm2->next) {\
 	      if(pm2->prev) { pm2->prev->next=pm2->next;\
 	       pm2->next->prev=pm2->prev;\
 	       if((ewc+pm2->a)->point==pm2) (ewc+pm2->a)->point=pm2->next;}\
 	      else { pm1=pm1->next; pm1->prev=0;\
-	       (ewc+pm2->a)->point=pm2->next;};}\
+	       (ewc+pm2->a)->point=pm2->next;}}\
 	     else { if(pm2->prev) pm2->prev->next=0; else pm1=0;}
 
 #define COLOR(r, s) q=xp->first; while(q!=xp->last) {\
 		     j=q-> r ; q-> r =col; col+=(j==q->next-> r )?0:1;\
-		     q=q->next;}; q-> r = s ;
+		     q=q->next;} q-> r = s ;
 
 #define FARBE(r) while(q!= r ) { q->a=col; ewc[col].m++;\
 		  if(q->c!=q->next->c) { col++; ewc[col].point=q->next;\
-		  ewc[col].m=0;}; q=q->next;};
+		  ewc[col].m=0;} q=q->next;}
 FILE *f;
 struct triangle {
 	struct multiset *ij, *jk, *ik;
@@ -80,8 +80,6 @@ struct color_class {
 int n, maxcolor, newcolor;
 int max[vm];
 
-
-
 struct triangle *sort_triangles(struct triangle *p)
 {
 	struct triangle *q;
@@ -99,16 +97,16 @@ struct triangle *sort_triangles(struct triangle *p)
 			SCAN(p, (p->ij->a) / n);
 		case 3:
 			SCAN(p, (p->ij->a) % n);
-		};
+		}
 		col = 0;
 		SORT(n, col++);
 		yp->last->next = 0;
-	};
+	}
 	q = p;
 	while (q) {
 		q->l = q->ik->l++;
 		q = q->next;
-	};
+	}
 	for (xp = bucket; xp < bucket + n; xp++)
 		xp->last = 0;
 	SCAN(p, p->l);
@@ -131,7 +129,7 @@ struct multiset *sort_multisets(struct multiset *p, struct multiset *px)
 	while (zp) {
 		zp->c = 0;
 		zp = zp->next;
-	};
+	}
 	for (jp = max + n - 1; jp >= max; jp--) {
 		for (xp = bucket; xp <= bucket + *jp; xp++)
 			xp->last = 0;
@@ -145,7 +143,7 @@ struct multiset *sort_multisets(struct multiset *p, struct multiset *px)
 			yp++;
 			xp->last->next = yp->first;
 			COLOR(c, col++);
-		};
+		}
 		xp = yp;
 		COLOR(c, col);
 		yp->last->next = zp;
@@ -155,8 +153,8 @@ struct multiset *sort_multisets(struct multiset *p, struct multiset *px)
 			zp->joey = zp->joey->next;
 			free(pt);
 			zp = zp->next;
-		};
-	};
+		}
+	}
 
 	newcolor = maxcolor;
 	zp = p;
@@ -164,7 +162,7 @@ struct multiset *sort_multisets(struct multiset *p, struct multiset *px)
 		zp->joey = 0;
 		zp->l = 0;
 		zp = zp->next;
-	};
+	}
 	for (i = 0; i < 2; i++) {
 		for (xp = bucket; xp < bucket + n; xp++)
 			xp->last = 0;
@@ -173,7 +171,7 @@ struct multiset *sort_multisets(struct multiset *p, struct multiset *px)
 			SCAN(p, (p->a) % n);
 		case 1:
 			SCAN(p, (p->a) / n);
-		};
+		}
 		col = 0;
 		xp = bucket;
 		while (xp->last == 0)
@@ -185,11 +183,11 @@ struct multiset *sort_multisets(struct multiset *p, struct multiset *px)
 				yp->last->next = xp->first;
 				COLOR(l, col++);
 				yp = xp;
-			};
+			}
 			xp++;
-		};
+		}
 		yp->last->next = 0;
-	};
+	}
 	hi = col;
 	for (xp = bucket; xp < bucket + hi; xp++)
 		xp->last = 0;
@@ -200,14 +198,14 @@ struct multiset *sort_multisets(struct multiset *p, struct multiset *px)
 	for (xp = bucket; xp < bucket + hi - 1; xp++) {
 		yp++;
 		xp->last->next = yp->first;
-	};
+	}
 	yp->last->next = px;
 	zp = bucket->first;
 	zp->prev = 0;
 	while (zp->next != px) {
 		zp->next->prev = zp;
 		zp = zp->next;
-	};
+	}
 	if (px)
 		px->prev = zp;
 
@@ -223,18 +221,18 @@ struct multiset *sort_multisets(struct multiset *p, struct multiset *px)
 				if (j > may) {
 					may = j;
 					mp = zp;
-				};
+				}
 				zp = q->next;
 				j = 0;
-			};
+			}
 			i++;
 			j++;
 			q = q->next;
-		};
+		}
 		if (j > may) {
 			may = j;
 			mp = zp;
-		};
+		}
 		x = ewc[xp->first->a].m - i;
 		if (x < may) {
 			ewc[xp->first->a].m = may;
@@ -246,8 +244,8 @@ struct multiset *sort_multisets(struct multiset *p, struct multiset *px)
 				for (j = 0; j < x; j++) {
 					zp->a = newcolor;
 					zp = zp->next;
-				};
-			};
+				}
+			}
 			ewc[xp->first->a].point = mp;
 			col = newcolor + 1;
 			q = xp->first;
@@ -263,7 +261,7 @@ struct multiset *sort_multisets(struct multiset *p, struct multiset *px)
 				ewc[col].m++;
 				newcolor = col;
 				q->a = col++;
-			};
+			}
 		} else {
 			col = newcolor + 1;
 			q = xp->first;
@@ -273,9 +271,9 @@ struct multiset *sort_multisets(struct multiset *p, struct multiset *px)
 			ewc[col].m++;
 			newcolor = col;
 			q->a = col++;
-		};
+		}
 		newcolor = col - 1;
-	};
+	}
 	return (p);
 }
 
@@ -302,10 +300,10 @@ struct multiset *multisets(struct triangle *pt1, struct multiset *pm1)
 			PICK;
 			pm2->next = p;
 			p = pm2;
-		};
+		}
 		pm2->joey = pt1;
 		pt1 = pt2;
-	};
+	}
 	for (xp = bucket; xp < bucket + n; xp++)
 		xp->last = 0;
 	SCAN(p, (p->l) - 1);
@@ -318,9 +316,9 @@ struct multiset *multisets(struct triangle *pt1, struct multiset *pm1)
 		if (xp->last) {
 			yp->last->next = xp->first;
 			yp = xp;
-		};
+		}
 		xp--;
-	};
+	}
 	yp->last->next = 0;
 	return (sort_multisets(p, pm1));
 }
@@ -341,7 +339,7 @@ struct multiset *presort(struct multiset *p)
 		yp++;
 		(xp->last)->next = yp->first;
 		(pc++)->point = xp->first;
-	};
+	}
 	(yp->last)->next = 0;
 	pc->point = yp->first;
 	return (p);
@@ -369,11 +367,10 @@ struct triangle *triangles(struct multiset S[vm][vm])
 				pt->ij = &S[x][j];
 				pt->jk = &S[j][y];
 				pt->c = 1;
-			};
+			}
 			for (j = 0; j < n; j++) {
 				if (S[j][y].a <= maxcolor) {
-					if (S[j][x].a < v
-						|| (S[j][x].a == v && (&S[j][x] - pm) > 0)) {
+					if (S[j][x].a < v || (S[j][x].a == v && (&S[j][x] - pm) > 0)) {
 						if ((pt->next = (struct triangle *)
 							 malloc(sizeof(struct triangle))) == 0)
 							return (0);
@@ -382,13 +379,12 @@ struct triangle *triangles(struct multiset S[vm][vm])
 						pt->ij = &S[j][x];
 						pt->jk = pm;
 						pt->c = 1;
-					};
-				};
-			};
+					}
+				}
+			}
 			for (j = 0; j < n; j++) {
 				if (S[x][j].a <= maxcolor) {
-					if (S[y][j].a < v
-						|| (S[y][j].a == v && (&S[y][j] - pm) > 0)) {
+					if (S[y][j].a < v || (S[y][j].a == v && (&S[y][j] - pm) > 0)) {
 						if ((pt->next = (struct triangle *)
 							 malloc(sizeof(struct triangle))) == 0)
 							return (0);
@@ -397,12 +393,12 @@ struct triangle *triangles(struct multiset S[vm][vm])
 						pt->ij = pm;
 						pt->jk = &S[y][j];
 						pt->c = 1;
-					};
-				};
-			};
+					}
+				}
+			}
 			pm = pm->next;
-		};
-	};
+		}
+	}
 	pt->next = 0;
 	return (help.next);
 }
@@ -428,11 +424,11 @@ void main(int narg, char *arg[10])
 			if (S[i][j].a < 0 || S[i][j].a > newcolor) {
 				printf("please check your input!\n");
 				return;
-			};
+			}
 			S[i][j].joey = 0;
 			S[i][j].l = 0;
 			S[i][j].c = 0;
-		};
+		}
 	for (pc = ewc; pc < ewc + n * n; pc++)
 		pc->m = 0;
 	for (i = 0; i < n; ++i)
@@ -449,28 +445,28 @@ void main(int narg, char *arg[10])
 				return;
 			} else
 				ewc[S[j][i].a].m = 2;
-		};
+		}
 	for (pc = ewc; pc <= ewc + newcolor; pc++) {
 		if (pc->m == 0) {
 			printf("please check your input!\n");
 			return;
 		} else
 			pc->m = 0;
-	};
+	}
 
 	pm1 = 0;
 	for (i = n - 1; i >= 0; i--)
 		for (j = n - 1; j >= 0; j--) {
 			S[i][j].next = pm1;
 			pm1 = &S[i][j];
-		};
+		}
 	pm1 = presort(&S[0][0]);
 	pm2 = pm1;
 	pm1->prev = 0;
 	while (pm1->next) {
 		(pm1->next)->prev = pm1;
 		pm1 = pm1->next;
-	};
+	}
 	maxcolor = 0;
 	printf("\nnumber of colors: %6d", newcolor + 1);
 	cpu = clock() / 1000;
@@ -487,8 +483,8 @@ void main(int narg, char *arg[10])
 			pm2 = pm1;
 			printf("\b\b\b\b\b\b%6d", newcolor + 1);
 			fflush(stdout);
-		};
-	};
+		}
+	}
 	cpu = clock() / 1000 - cpu;
 	for (pc = ewc; pc <= ewc + maxcolor; pc++)
 		pc->m = -1;
@@ -496,7 +492,7 @@ void main(int narg, char *arg[10])
 	for (i = 0; i < n; ++i) {
 		if (ewc[S[i][i].a].m < 0)
 			ewc[S[i][i].a].m = j++;
-	};
+	}
 	printf("\n\nnumber of cells:  %6d", j);
 	for (i = 0; i <= maxcolor; ++i)
 		if (ewc[i].m < 0)
@@ -513,8 +509,8 @@ void main(int narg, char *arg[10])
 					printf(" %d ", S[i][j].a);
 				else
 					printf("%d ", S[i][j].a);
-			};
+			}
 		}
 		printf("\n");
-	};
+	}
 }
