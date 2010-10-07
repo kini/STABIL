@@ -25,7 +25,7 @@
 #include <stdio.h>
 #define MAXVERT 200
 #define MAXRANK MAXVERT*MAXVERT
-#define MEMLEN 3*MAXRANK
+#define MEMLENGTH 3*MAXRANK
 #define mlong int																/* to fix an MSDOS artefact */
 struct triple {
 	int col;
@@ -156,7 +156,7 @@ struct edge *color[MAXRANK];
 	int k, p, i, j, rank, klass, c, s, t, truth, overfl, q, oldq;
 	int newrank, oldnrank, oldp;
 	int *gamma;
-	int memory[MEMLENgth];
+	int memory[MEMLENGTH];
 	struct edge *free, *w, *o, *oo;
 	gamma = &memory[0];
 	rank = *arank;
@@ -180,7 +180,7 @@ struct edge *color[MAXRANK];
 				oldnrank = newrank;
 				oldp = p;
 				search(k, gamma, &p, &c, &klass, &s, &newrank, &truth, &q, &oldq);
-				if (p >= (MEMLENgth - (vert * 3 + 5)) || overfl == 1) {
+				if (p >= (MEMLENGTH - (vert * 3 + 5)) || overfl == 1) {
 					p = oldp;
 					newrank = oldnrank;
 					overfl = 1;
