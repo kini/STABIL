@@ -18,7 +18,7 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
  
     Authors can be contacted at
-    e-mail: Luitpold Babel  <luitpold.babel@unibw.de>
+    e-mail: Luitpold Babel <luitpold.babel@unibw.de>
     e-mail: Dmitrii Pasechnik <dimpase@gmail.com>                          */
 
 (this file is outdated!)

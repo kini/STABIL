@@ -23,9 +23,9 @@
 
 #include <stdlib.h>
 #include <stdio.h>
-#define MAXVERT 200
-#define MAXRANK MAXVERT*MAXVERT
-#define MEMLENGTH 3*MAXRANK
+#define MAXN 200
+#define MAXD MAXN*MAXN
+#define MEMLENGTH 3*MAXN*MAXN
 #define mlong int																/* to fix an MSDOS artefact */
 struct triple {
 	int col;
@@ -40,8 +40,8 @@ struct edge {
 
 int main(int narg, char *arg[10])
 {
-	struct edge *color[MAXRANK];												/* list of edge lists indexed by color */
-	int graph[MAXVERT][MAXVERT];												/* colored adjacency matrix of the graph */
+	struct edge *color[MAXD];													/* list of linked lists of edges indexed by color */
+	int graph[MAXN][MAXN];														/* colored adjacency matrix of the graph */
 	int rank;																	/* number of colors (rank of the configuration) */
 	int vert;																	/* number of vertices (dimension of the configuration) */
 	int i, j;
@@ -50,7 +50,7 @@ int main(int narg, char *arg[10])
 
 	printf("--- STABIL2 implementation of the Weisfeiler-Leman algorithm ---\n");
 
-	f = fopen(arg[1], "r");														/* char */
+	f = fopen("input1", "r");														/* char */
 	if (f == NULL) {
 		printf("HALT: File not found.\n");
 		exit(0);
@@ -102,9 +102,10 @@ int main(int narg, char *arg[10])
 	/* printf("\n\n%ld msec \n\n",end_time); */
 }
 
-int edgepack(int graph[MAXVERT][MAXVERT], int rank, int vert, struct edge *color[MAXRANK])
+/* check for bad input, populate the linked lists of edges */
+int edgepack(int graph[MAXN][MAXN], int rank, int vert, struct edge *color[MAXD])
 {
-	static struct edge space[MAXRANK];
+	static struct edge space[MAXD];
 	int k, i, j;
 	struct edge *free;
 
@@ -113,29 +114,29 @@ int edgepack(int graph[MAXVERT][MAXVERT], int rank, int vert, struct edge *color
 			if (graph[i][j] < 0 || graph[i][j] > rank - 1)
 				return (0);
 		}
-	for (free = space; free < space + rank; free++)
+	for (free = space; free < space + rank; free++) /* clears the first d edges in space */
 		free->row = 0;
-	for (i = 0; i < vert; ++i)
+	for (i = 0; i < vert; ++i) /* set .row to 1 for each color represented in the matrix diagonal */
 		space[graph[i][i]].row += (space[graph[i][i]].row) ? 0 : 1;
-	for (i = 0; i < vert; ++i)
+	for (i = 0; i < vert; ++i) /* set .row to 2 for each color represented off the matrix diagonal */
 		for (j = i + 1; j < vert; ++j) {
 			if (space[graph[i][j]].row == 1)
-				return (0);
+				return (0); /* die if off-diagonal entry contains diagonal color */
 			else
 				space[graph[i][j]].row = 2;
 			if (space[graph[j][i]].row == 1)
-				return (0);
+				return (0); /* die if off-diagonal entry contains diagonal color */
 			else
 				space[graph[j][i]].row = 2;
 		}
 	for (free = space; free < space + rank; free++)
 		if (free->row == 0)
-			return (0);
+			return (0); /* die if any color 0 to d-1 is not found in the matrix */
 
 	free = &space[0];
-	for (k = 0; k < MAXRANK; k++)
+	for (k = 0; k < MAXD; k++) /* kill everything in struct edge** color */
 		color[k] = NULL;
-	for (i = 0; i < vert; i++)
+	for (i = 0; i < vert; i++) /* populate color[] */
 		for (j = 0; j < vert; j++) {
 			free->row = i;
 			free->col = j;
@@ -148,51 +149,47 @@ int edgepack(int graph[MAXVERT][MAXVERT], int rank, int vert, struct edge *color
 	return (1);
 }
 
-stabil(arank, vert, graph, color)
-int graph[MAXVERT][MAXVERT];
-int vert, *arank;
-struct edge *color[MAXRANK];
+/* main algorithm */
+int stabil(int* arank, int vert, int graph[MAXN][MAXN], struct edge* color[MAXD])
 {
 	int k, p, i, j, rank, klass, c, s, t, truth, overfl, q, oldq;
 	int newrank, oldnrank, oldp;
 	int *gamma;
 	int memory[MEMLENGTH];
 	struct edge *free, *w, *o, *oo;
-	gamma = &memory[0];
+	gamma = memory;
 	rank = *arank;
 	printf("%6d", rank);
 	fflush(stdout);
-	do {																		/*  until new colors would not appear */
-		truth = 0;																/* new colors were not appear */
+	do {																			/*! until new colors would not appear */
+		truth = 0;																	/*! new colors were not appear */
 		newrank = rank;
-		for (k = 0; k < rank; k++) {											/* cycle on colors */
+		for (k = 0; k < rank; k++) {												/*! cycle on colors */
 			overfl = 0;
-			klass = 0;															/* number of new colors */
-			p = 0;																/*  the begin of newgamma */
+			klass = 0;																/*! number of new colors */
+			p = 0;																	/*! the begin of newgamma */
 			*gamma = k;
-			w = color[k];
-			o = w;																/* the previous edge of color k  */
+			w = color[k];														/* start with first edge of color k */
+			o = w;																	/*! the previous edge of color k */
 			if (w->ptr == NULL)
-				continue;														/* new k  */
+				continue;														/* no more edges of color k, move on to next k */
 
-			do {
-				triangl(graph, w->row, w->col, gamma + p, rank, vert);
-				oldnrank = newrank;
+			do {																/* for each edge (u,v) of color k */
+				triangl(graph, w->row, w->col, gamma + p, rank, vert);			/* find all triangles with base (u,v), store their info */
+				oldnrank = newrank;												/* in case we run out of memory */
 				oldp = p;
-				search(k, gamma, &p, &c, &klass, &s, &newrank, &truth, &q, &oldq);
-				if (p >= (MEMLENGTH - (vert * 3 + 5)) || overfl == 1) {
+				search(k, gamma, &p, &c, &klass, &s, &newrank, &truth, &q, &oldq);		/* do something */
+				if (p >= (MEMLENGTH - (vert * 3 + 5)) || overfl == 1) {			/* forget everything gained from this edge (!?) because there's no space for further edges */
 					p = oldp;
 					newrank = oldnrank;
 					overfl = 1;
 					if (q == -1)
 						*(gamma + oldq + 4) = -1;
-					else {
-						if (oldq != -1) {
-							if (*(gamma + p + 3) != -1)
-								*(gamma + *(gamma + p + 3) + 2) = *(gamma + p + 2);
-							if (*(gamma + p + 2) != -1)
-								*(gamma + *(gamma + p + 2) + 3) = *(gamma + p + 3);
-						}
+					else if (oldq != -1) {
+						if (*(gamma + p + 3) != -1)
+							*(gamma + *(gamma + p + 3) + 2) = *(gamma + p + 2);
+						if (*(gamma + p + 2) != -1)
+							*(gamma + *(gamma + p + 2) + 3) = *(gamma + p + 3);
 					}
 				}
 				if (oldnrank != newrank) {
@@ -206,8 +203,8 @@ struct edge *color[MAXRANK];
 				} else
 					o = w;
 				w = o->ptr;
-			}
-			while (w != NULL);													/* the last edge of color #k */
+			} while (w != NULL);												/*! the last edge of color #k */
+			
 			if (overfl == 1)
 				newrank++;
 			for (i = rank; i < newrank; i++) {
@@ -218,30 +215,28 @@ struct edge *color[MAXRANK];
 				}
 			}
 			rank = newrank;
-		}																		/* next color */
+		}																		/*! next color */
 		if (truth == 0)
 			break;
 		*arank = rank;
-	}
-	while (1);
+	} while (1);
 }
 
-triangl(graph, i, j, newgamma, rank, vert)
-int graph[MAXVERT][MAXVERT];
-int i, j;
-mlong *newgamma;
+/* search all paths of length 2 between vertices i and j, classify by color */
+/* triangl(graph = graph, i = w->row, j = w->col, newgamma = gamma + p, rank = rank, vert = vert); */
+int triangl(int graph[MAXN][MAXN], int i, int j, mlong* newgamma, int rank, int vert)
 {
-	static struct triple *lines[MAXRANK];
+	static struct triple *lines[MAXD]; /* an array of linked lists, one for each possible color */
 	struct triple *w;
 	int s, t, p, numval, q;
-	struct triple cnst[MAXVERT], *freemem;
+	struct triple cnst[MAXN], *freemem;
 	mlong *nnn;
-	numval = 0;																	/* the number of nonzero const */
-	freemem = &cnst[0];
+	numval = 0;																	/*! the number of nonzero const */
+	freemem = cnst;
 	for (p = 0; p < rank; p++)
 		lines[p] = NULL;
 	for (p = 0; p < vert; p++) {
-		s = graph[i][p];
+		s = graph[i][p];	/* get the colors of the path from i to j through p */
 		t = graph[p][j];
 		pack(&lines[s], &freemem, t);
 	}
@@ -259,14 +254,16 @@ mlong *newgamma;
 	*(newgamma + 1) = numval;
 }
 
-pack(struct triple **line, struct triple **free, int t)
+/* write nonzero predicted structure coefficients into linked lists indexed by color(u,w) */
+/* pack(line = lines+s, free = &freemem, t = t) */
+int pack(struct triple **line, struct triple **free, int t) /* line is a pointer to a pointer, free is a pointer to an array */
 {
 	struct triple *w, *o;
 	if (*line == NULL) {														/* t is the first column in the line s */
+		(*free)->col = t;
+		(*free)->val = 1;
+		(*free)->ptr = NULL;
 		*line = *free;
-		(*line)->col = t;
-		(*line)->val = 1;
-		(*line)->ptr = NULL;
 		(*free)++;
 	} else {
 		if ((*line)->col > t) {													/* the first column in the line > t */
@@ -276,7 +273,6 @@ pack(struct triple **line, struct triple **free, int t)
 			*line = *free;
 			(*free)++;
 		} else {																/* the first column in the line <=t  */
-
 			w = *line;
 			while (w != NULL) {
 				if (w->col == t) {
@@ -305,22 +301,21 @@ pack(struct triple **line, struct triple **free, int t)
 	}
 }
 
-search(k, gamma, ap, ac, aklass, as, anewrank, atruth, aq, aoldq)
-mlong *gamma;
-int *ac, *ap, *aklass, *as, *anewrank, *atruth, k, *aq, *aoldq;
+/* search(k = k, gamma = gamma, ap = &p, ac = &c, aklass = &klass, as = &s, anewrank = &newrank, atruth = &truth, aq = &q, aoldq = &oldq); */
+int search(int k, mlong* gamma, int* ap, int* ac, int* aklass, int* as, int* anewrank, int* atruth, int* aq, int* aoldq)
 {
 	int q, oldp, oldq, nexte, dl, t, i;
 	int c, p, klass, newrank, truth;
 	p = *ap;
-	klass = *aklass;
-	truth = *atruth;
-	newrank = *anewrank;
-	oldp = p;																	/* the begin of newgamma */
-	q = 0;																		/* the begin of searching in gamma */
-	if (klass) {
+	klass = *aklass; /* number of new colors (?) */
+	truth = *atruth; /* a flag */
+	newrank = *anewrank; /* d_ */
+	oldp = p;																	/*! the begin of newgamma */
+	q = 0;																		/*! the begin of searching in gamma */
+	if (klass) { /* color k has yielded divisions (?) */
 		while (*(gamma + q + 1) != *(gamma + p + 1)) {
 			if (*(gamma + q + 1) > *(gamma + p + 1)) {
-				if (*(gamma + q + 2) == -1) {									/*   prev==-1  */
+				if (*(gamma + q + 2) == -1) {									/*!   prev==-1  */
 					*(gamma + q + 2) = p;
 					*(gamma + p + 2) = -1;
 					*(gamma + p) = newrank;
@@ -332,55 +327,50 @@ int *ac, *ap, *aklass, *as, *anewrank, *atruth, k, *aq, *aoldq;
 					truth = 1;
 					p = oldp + *(gamma + oldp + 1) * 3 + 5;
 					goto IR1;
-				} else {
-					if (*(gamma + p + 1) > *(gamma + *(gamma + q + 2) + 1)) {	/* between */
-						*(gamma + p + 2) = *(gamma + q + 2);
-						*(gamma + p + 3) = q;
-						*(gamma + q + 2) = p;
-						/*neu */ *(gamma + *(gamma + p + 2) + 3) = p;
-						*(gamma + p + 4) = -1;
-						*(gamma + p) = newrank;
-						c = newrank;
-						newrank++;
-						klass++;
-						truth = 1;
-						p = p + *(gamma + p + 1) * 3 + 5;
-						goto IR1;
-					} else
-						q = *(gamma + q + 2);
-				}
-			} else {
-				if (*(gamma + q + 3) == -1) {									/* next==-1  */
-					*(gamma + q + 3) = p;
-					*(gamma + p + 3) = -1;
+				} else if (*(gamma + p + 1) > *(gamma + *(gamma + q + 2) + 1)) {	/*! between */
+					*(gamma + p + 2) = *(gamma + q + 2);
+					*(gamma + p + 3) = q;
+					*(gamma + q + 2) = p;
+					/* neu */ *(gamma + *(gamma + p + 2) + 3) = p;
+					*(gamma + p + 4) = -1;
 					*(gamma + p) = newrank;
 					c = newrank;
 					newrank++;
 					klass++;
-					*(gamma + p + 2) = q;
-					*(gamma + p + 4) = -1;
 					truth = 1;
-					p = oldp + *(gamma + oldp + 1) * 3 + 5;
+					p = p + *(gamma + p + 1) * 3 + 5;
 					goto IR1;
-				} else {
-					if (*(gamma + p + 1) < *(gamma + *(gamma + q + 3) + 1)) {	/* between */
-						*(gamma + p + 3) = *(gamma + q + 3);
-						*(gamma + p + 2) = q;
-						*(gamma + q + 3) = p;
-						/*neu */ *(gamma + *(gamma + p + 3) + 2) = p;
-						*(gamma + p + 4) = -1;
-						*(gamma + p) = newrank;
-						c = newrank;
-						newrank++;
-						klass++;
-						truth = 1;
-						p = p + *(gamma + p + 1) * 3 + 5;
-						goto IR1;
-					} else
-						q = *(gamma + q + 3);
-				}
-			}
+				} else
+					q = *(gamma + q + 2);
+			} else if (*(gamma + q + 3) == -1) {									/*! next==-1  */
+				*(gamma + q + 3) = p;
+				*(gamma + p + 3) = -1;
+				*(gamma + p) = newrank;
+				c = newrank;
+				newrank++;
+				klass++;
+				*(gamma + p + 2) = q;
+				*(gamma + p + 4) = -1;
+				truth = 1;
+				p = oldp + *(gamma + oldp + 1) * 3 + 5;
+				goto IR1;
+			} else if (*(gamma + p + 1) < *(gamma + *(gamma + q + 3) + 1)) {	/*! between */
+				*(gamma + p + 3) = *(gamma + q + 3);
+				*(gamma + p + 2) = q;
+				*(gamma + q + 3) = p;
+				/* neu */ *(gamma + *(gamma + p + 3) + 2) = p;
+				*(gamma + p + 4) = -1;
+				*(gamma + p) = newrank;
+				c = newrank;
+				newrank++;
+				klass++;
+				truth = 1;
+				p = p + *(gamma + p + 1) * 3 + 5;
+				goto IR1;
+			} else
+				q = *(gamma + q + 3);
 		}
+		
 		do {
 			oldq = q;
 			dl = *(gamma + q + 1);
@@ -391,13 +381,13 @@ int *ac, *ap, *aklass, *as, *anewrank, *atruth, k, *aq, *aoldq;
 				if (*(gamma + q) != *(gamma + p))
 					break;
 			}
-			if (t == dl * 3) {													/* old class  */
-				c = *(gamma + oldq);											/* colour */
+			if (t == dl * 3) {													/*! old class  */
+				c = *(gamma + oldq);											/*! colour */
 				p = oldp;
 				oldq = -1;
 				break;
 			}
-			if (nexte == -1) {													/* create a new class */
+			if (nexte == -1) {													/*! create a new class */
 				klass++;
 				*(gamma + oldp) = newrank;
 				c = newrank;
@@ -408,14 +398,14 @@ int *ac, *ap, *aklass, *as, *anewrank, *atruth, k, *aq, *aoldq;
 				newrank++;
 				truth = 1;
 				p = oldp + *(gamma + oldp + 1) * 3 + 5;
-				/*neu */ q = nexte;
+				/* neu */ q = nexte;
 				break;
 			}
 			q = nexte;
 			p = oldp;
 		} while (q != -1);
 	} else {
-		klass++;																/* the first edge of colour k  */
+		klass++;																/*! the first edge of colour k */
 		*(gamma + p + 4) = -1;
 		*(gamma + p + 3) = -1;
 		*(gamma + p + 2) = -1;
