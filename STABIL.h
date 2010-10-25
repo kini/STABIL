@@ -10,4 +10,4 @@
 #define EXIT_ALLOC_ERROR 2
 #define EXIT_OVERFLOW 3
 
-int STABIL(unsigned long* matrix, unsigned long n, unsigned long d);
+int STABIL(unsigned long* matrix, unsigned long n, unsigned long* d);

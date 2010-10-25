@@ -55,7 +55,7 @@ struct theader {																/* a header for lists of struct triple elements,
 	$n\times n$ matrices. The function arguments n and d are as above. Internal variable naming convention is from
 	visualization of "matrix" as a colored digraph with cycles.
 */
-int STABIL(unsigned long* matrix, unsigned long n, unsigned long d)
+int STABIL(unsigned long* matrix, unsigned long n, unsigned long* d)
 {
 	/* constants */
 	const unsigned long memsize = n * n * sizeof(struct triple);
@@ -74,7 +74,7 @@ int STABIL(unsigned long* matrix, unsigned long n, unsigned long d)
 																					coefficients */
 	unsigned long ab, ua, av;													/* 2-dimensional iterators */
 	unsigned long nextcolor;													/* next available color for new color classes */
-
+	
 	/* navigational pointers */
 	struct edge* uv;															/* pointer to current edge (u,v) */
 	struct triple2* newt2;														/* pointer to next free position in block "triple2s" */
@@ -85,20 +85,20 @@ int STABIL(unsigned long* matrix, unsigned long n, unsigned long d)
 	struct theader* hnav2;
 	struct triple* tnav1;
 	struct triple* tnav2;
-
+	
 	/* copies */
 	struct edge* uv_;
 	unsigned long nextcolor_;
 	struct theader* hnav1_;
-
+	
 	/* check matrix for shenanigans */
 	if (
-		!CALLOC(color_type, d)
+		!CALLOC(color_type, *d)
 	)
 		return EXIT_ALLOC_ERROR;
 	for (ab = 0, a = 0; a < n; ++a)
 		for (b = 0; b < n; ++b, ++ab) {
-			if (matrix[ab] < 0 || matrix[ab] >= d)
+			if (matrix[ab] < 0 || matrix[ab] >= *d)
 				return EXIT_BAD_INPUT;											/* die if out-of-range color found */
 			if (color_type[matrix[ab]] == 0)
 				color_type[matrix[ab]] = 1 + (a == b);							/* type 1 is off-diagonal (edge), type 2 is diagonal (vertex) */
@@ -138,8 +138,8 @@ int STABIL(unsigned long* matrix, unsigned long n, unsigned long d)
 		return EXIT_ALLOC_ERROR;
 	do {
 		stable = 1;
-		nextcolor = d;															/* original colors run from 0 to d-1, so d is the first available new color */
-		for (k = 0; k < d; ++k) {												/* for each color k... */
+		nextcolor = *d;															/* original colors run from 0 to d-1, so d is the first available new color */
+		for (k = 0; k < *d; ++k) {												/* for each color k... */
 			overflow = 0;
 //			klass = 0;															/* TODO: rename this */
 			hnav1 = (struct theader*)memory;									/* for navigation in triple* memory */
@@ -149,10 +149,10 @@ int STABIL(unsigned long* matrix, unsigned long n, unsigned long d)
 				continue;														/* there's only one edge of color k, and thus one (true) prediction for each p_{i,j}^k, nothing to do */
 			
 			do {																/* for each edge (u,v) with color k... */
-				if (overflow) {													/* no more space for new coeff lists; just set to nextcolor */
+				if (overflow) {													/* no more space for new coeff lists; just set to the last color */
 					uv_->next = uv->next;										/* when (u,v) is the first edge of its color, overflow will not have occurred, so here uv_ is edge previous to uv */
-					uv->next = color_classes[nextcolor];						/* prepend (u,v) */
-					color_classes[nextcolor] = uv;								/* rebase linked list */
+					uv->next = color_classes[nextcolor - 1];					/* prepend (u,v) */
+					color_classes[nextcolor - 1] = uv;							/* rebase linked list */
 					uv = uv_->next;												/* move on to next (u,v) of original color k */
 					continue;
 				}
@@ -160,7 +160,7 @@ int STABIL(unsigned long* matrix, unsigned long n, unsigned long d)
 	compute the predicted structure coefficients (in struct triple2 linked lists)
 */
 				newt2 = triple2s;
-				for (i = 0; i < d; ++i)
+				for (i = 0; i < *d; ++i)
 					uw_classes[i] = NULL;										/* clear space for currently possible colors of uw for triangles founded on uv */
 				for (
 					a = 0, ua = uv->row * n, av = uv->col;						/* loop over possible vertices w (= a) with which to build a triangle on uv */
@@ -198,13 +198,13 @@ int STABIL(unsigned long* matrix, unsigned long n, unsigned long d)
 					}
 				}
 				
-
+				
 /*	STEP 1(ii)
 	collect the nonzero predicted structure coefficients into the block "memory"
 */
 				hnav1->len = 0;													/* number of color-different triangles found on (u,v) so far */
 				tnav1 = (struct triple*)(hnav1 + 1);							/* position tnav1 immediately after the current theader */
-				for (i = 0; i < d; ++i) {										/* for each possible color of (u,w) ... */
+				for (i = 0; i < *d; ++i) {										/* for each possible color of (u,w) ... */
 					t2nav1 = uw_classes[i];
 					do {														/* ... count all color-distinct triangles with that color on their (u,w), notate their notation */
 						++hnav1->len;
@@ -212,7 +212,7 @@ int STABIL(unsigned long* matrix, unsigned long n, unsigned long d)
 					} while(t2nav1 = t2nav1->next);
 				}
 				
-
+				
 /*	STEP 1(iii)
 	search the block "MEMORY", here called "void* memory", for structure coefficient prediction lists matching the one
 	produced by (u,v); if such is found, set (u,v) to that color, else create a new color for (u,v)
@@ -276,7 +276,7 @@ int STABIL(unsigned long* matrix, unsigned long n, unsigned long d)
 						}
 					}
 				}
-
+				
 				if (hnav1->color != k) {										/* this won't happen on the first (u,v), so inside we can assume uv_ != uv */
 					uv_->next = uv->next;
 					uv->next = color_classes[hnav1->color];
@@ -288,22 +288,29 @@ int STABIL(unsigned long* matrix, unsigned long n, unsigned long d)
 				} else
 					uv_ = uv;
 				uv = uv_->next;
-
-				if ((int)memory + memsize - (int)hnav1 <= sizeof(struct theader) + n*sizeof(struct triple))	/* if no more space for coeff lists, mark an overflow */
+				
+				if ((int)memory + memsize - (int)hnav1 <= sizeof(struct theader) + n*sizeof(struct triple)) {	/* if no more space for coeff lists, mark an overflow */
 					overflow = 1;												/* some pretty ugly pointer nonsense, but that's the consequence of homebrewed memory management, I guess */
+					++nextcolor;												/* increment nextcolor so that the previous nextcolor can be used as the class of edges found after overflow */
+				}
 			} while (uv != NULL);												/* move on to the next color when this color is exhausted */
 
-			if (overflow)
-				nextcolor++;													/* because we were shoehorning new color classes into nextcolor, we weren't incrementing it - now we can */
-
-			for (i = d; i < nextcolor; ++i) {									/* save color changes to matrix; no need to check i < d as old colors are only shrunk */
+			for (i = *d; i < nextcolor; ++i) {									/* save color changes to matrix; no need to check i < *d as old colors are only shrunk */
 				uv = color_classes[i];
 				do {
 					matrix[uv->row*n+uv->col] = i;
 				} while (uv = uv->next);
 			}
-
-			d = nextcolor;														/* because colors now range from 0 to nextcolor - 1 */
+			
+			*d = nextcolor;														/* because colors now range from 0 to nextcolor - 1 */
 		}
 	} while(!stable);															/* continue until the process stabilizes */
+
+	free(color_classes);
+	free(edges);
+	free(uw_classes);
+	free(triple2s);
+	free(memory);
+
+	return EXIT_SUCCESS;
 }
