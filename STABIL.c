@@ -141,7 +141,6 @@ int STABIL(unsigned long* matrix, unsigned long n, unsigned long* d)
 		nextcolor = *d;															/* original colors run from 0 to d-1, so d is the first available new color */
 		for (k = 0; k < *d; ++k) {												/* for each color k... */
 			overflow = 0;
-//			klass = 0;															/* TODO: rename this */
 			hnav1 = (struct theader*)memory;									/* for navigation in triple* memory */
 			uv = color_classes[k];												/* get the first edge of color k - this always exists */
 			uv_ = uv;															/* old (u,v) */
@@ -218,9 +217,10 @@ int STABIL(unsigned long* matrix, unsigned long n, unsigned long* d)
 	search the block "MEMORY", here called "void* memory", for structure coefficient prediction lists matching the one
 	produced by (u,v); if such is found, set (u,v) to that color, else create a new color for (u,v)
 */
-				if (hnav1 == (struct theader*)memory)							/* we're still on the first edge of color k, so we need to start building our structure of lists in void* memory */
+				if (hnav1 == (struct theader*)memory) {							/* we're still on the first edge of color k, so we need to start building our structure of lists in void* memory */
 					*hnav1 = (struct theader){k, hnav1->len, NULL, NULL, NULL};
-				else {														/* coefficient lists already exist, so now we need to search through them */
+					hnav1 = (struct theader*)((struct triple*)(hnav1 + 1) + hnav1->len);	/* first refined color class is of course not a duplicate within original class k */
+				} else {														/* coefficient lists already exist, so now we need to search through them */
 /*
 	The coefficient lists, one for each class of edges of color k, live in void* memory, and are arranged in several
 	linked lists, each containing coefficient lists of a certain length. These linked lists are in turn linked
@@ -291,6 +291,7 @@ int STABIL(unsigned long* matrix, unsigned long n, unsigned long* d)
 				uv = uv_->next;
 				
 				if ((unsigned long)memory + memsize - (unsigned long)hnav1 <= sizeof(struct theader) + n*sizeof(struct triple)) {	/* if no more space for coeff lists, mark an overflow */
+					stable = 0;
 					overflow = 1;												/* some pretty ugly pointer nonsense, but that's the consequence of homebrewed memory management, I guess */
 					++nextcolor;												/* increment nextcolor so that the previous nextcolor can be used as the class of edges found after overflow */
 				}
