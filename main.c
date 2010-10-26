@@ -5,6 +5,8 @@
 	- Keshav Kini <kini@member.ams.org>, 2010-10-25
 */
 
+#define ALLOC(X, Y) (X = malloc(Y * sizeof *(X)))
+
 #include <stdlib.h>
 #include <stdio.h>
 #include "STABIL.h"
@@ -21,14 +23,15 @@ int main (int argc, char* argv[]) {
 	else {
 		f = fopen(argv[1], "r");
 		if (!f) {
-			fprintf(stderr, "HALT: File %s not found!\n");
-			fprintf(stderr, "      Usage: `STABIL filename` (read from file) or `STABIL` (read from stdin)\n", argv[1]);
+			fprintf(stderr, "HALT: File %s not found!\n", argv[1]);
+			fprintf(stderr, "      Usage: `STABIL filename` (read from file) or `STABIL` (read from stdin)\n");
 			return EXIT_BAD_INPUT;
 		}
 	}
 
-	fscanf(f, "%d%d", &n, &d);													/* get rank and dimension from the first two lines of the input */
-
+	fscanf(f, "%d%d", &d, &n);													/* get rank and dimension from the first two lines of the input */
+	
+	ALLOC(matrix, n*n);
 	for (ij = 0, i = 0; i < n; ++i)
 		for (j = 0; j < n; ++j, ++ij)
 			fscanf(f, "%d", matrix + ij);										/* get matrix entries from input */
@@ -58,6 +61,7 @@ int main (int argc, char* argv[]) {
 			printf("\n");
 		}
 	}
-
+	
+	free(matrix);
 	return result;
 }

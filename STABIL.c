@@ -129,7 +129,7 @@ int STABIL(unsigned long* matrix, unsigned long n, unsigned long* d)
 	do computation
 */
 	if (
-		(memory = malloc(memsize)) ||											/* naively this should be of size n^3 + 5n^2, but a favorable tradeoff is made by allocating only n^2 blocks and doing
+		!(memory = malloc(memsize)) ||											/* naively this should be of size n^3 + 5n^2, but a favorable tradeoff is made by allocating only n^2 blocks and doing
 																					the computation more than once if n^2 blocks proves insufficient (i.e. too much disagreement in predicted structure
 																					coefficients) */
 		!CALLOC(uw_classes, n*n) ||												/* TODO: realloc this by powers of 2 when necessary instead of starting with n*n (?) */
@@ -143,7 +143,7 @@ int STABIL(unsigned long* matrix, unsigned long n, unsigned long* d)
 			overflow = 0;
 //			klass = 0;															/* TODO: rename this */
 			hnav1 = (struct theader*)memory;									/* for navigation in triple* memory */
-			uv = color_classes[k];												/* get the first edge of color k */
+			uv = color_classes[k];												/* get the first edge of color k - this always exists */
 			uv_ = uv;															/* old (u,v) */
 			if (uv->next == NULL)
 				continue;														/* there's only one edge of color k, and thus one (true) prediction for each p_{i,j}^k, nothing to do */
@@ -206,10 +206,11 @@ int STABIL(unsigned long* matrix, unsigned long n, unsigned long* d)
 				tnav1 = (struct triple*)(hnav1 + 1);							/* position tnav1 immediately after the current theader */
 				for (i = 0; i < *d; ++i) {										/* for each possible color of (u,w) ... */
 					t2nav1 = uw_classes[i];
-					do {														/* ... count all color-distinct triangles with that color on their (u,w), notate their notation */
+					while(t2nav1) {												/* ... count all color-distinct triangles with that color on their (u,w), notate their notation */
 						++hnav1->len;
 						*tnav1++ = (struct triple){i, t2nav1->wv, t2nav1->coeff};
-					} while(t2nav1 = t2nav1->next);
+						t2nav1 = t2nav1->next;
+					}															/* note: this is a while rather than a do because this linked list may be empty */
 				}
 				
 				
@@ -289,7 +290,7 @@ int STABIL(unsigned long* matrix, unsigned long n, unsigned long* d)
 					uv_ = uv;
 				uv = uv_->next;
 				
-				if ((int)memory + memsize - (int)hnav1 <= sizeof(struct theader) + n*sizeof(struct triple)) {	/* if no more space for coeff lists, mark an overflow */
+				if ((unsigned long)memory + memsize - (unsigned long)hnav1 <= sizeof(struct theader) + n*sizeof(struct triple)) {	/* if no more space for coeff lists, mark an overflow */
 					overflow = 1;												/* some pretty ugly pointer nonsense, but that's the consequence of homebrewed memory management, I guess */
 					++nextcolor;												/* increment nextcolor so that the previous nextcolor can be used as the class of edges found after overflow */
 				}
