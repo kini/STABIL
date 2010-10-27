@@ -29,12 +29,13 @@ int main (int argc, char* argv[]) {
 		}
 	}
 
-	fscanf(f, "%d%d", &d, &n);													/* get rank and dimension from the first two lines of the input */
+	fscanf(f, "%lu%lu", &d, &n);												/* get rank and dimension from the first two lines of the input */
 	
 	ALLOC(matrix, n*n);
 	for (ij = 0, i = 0; i < n; ++i)
 		for (j = 0; j < n; ++j, ++ij)
-			fscanf(f, "%d", matrix + ij);										/* get matrix entries from input */
+			fscanf(f, "%lu", matrix + ij);										/* get matrix entries from input */
+	fclose(f);
 
 	if (n > 0xffffUL) {
 		fprintf(stderr, "HALT: Predicted integer overflow!\n");
@@ -54,10 +55,10 @@ int main (int argc, char* argv[]) {
 		fprintf(stderr, "HALT: Could not allocate sufficient memory!\n");
 		break;
 	case EXIT_SUCCESS:
-		printf("%d \n%d \n", n, d);
+		printf("%lu \n%lu \n", n, d);
 		for (ij = 0, i = 0; i < n; ++i) {
 			for (j = 0; j < n; ++j, ++ij)
-				printf("%d ", matrix[ij]);
+				printf("%lu ", matrix[ij]);
 			printf("\n");
 		}
 	}
