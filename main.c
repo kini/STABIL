@@ -55,7 +55,7 @@ int main (int argc, char* argv[]) {
 		fprintf(stderr, "HALT: Could not allocate sufficient memory!\n");
 		break;
 	case EXIT_SUCCESS:
-		printf("%lu \n%lu \n", n, d);
+		printf("%lu \n%lu \n", d, n);
 		for (ij = 0, i = 0; i < n; ++i) {
 			for (j = 0; j < n; ++j, ++ij)
 				printf("%lu ", matrix[ij]);

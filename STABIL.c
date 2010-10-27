@@ -83,7 +83,6 @@ int STABIL(unsigned long* matrix, unsigned long n, unsigned long* d)
 	/* navigational pointers */
 	struct edge* uv;															/* pointer to current edge (u,v) */
 	struct triple2* newt2;														/* pointer to next free position in block "triple2s" */
-	struct theader* newh;														/* pointer to next free position in block "theaders" */
 	struct triple2* t2nav1;														/* pointers for navigation in linked list "uw_classes[i]" */
 	struct triple2* t2nav2;
 	struct theader* hnav1;														/* pointers for navigation in the block "theaders" */
@@ -220,7 +219,7 @@ int STABIL(unsigned long* matrix, unsigned long n, unsigned long* d)
 	the one produced by (u,v); if such is found, set (u,v) to that color, else create a new color for (u,v)
 */
 				if (hnav1 == theaders) {										/* we're still on the first edge of color k, so we need to start building our structure of lists in block "triples" */
-					*hnav1 = (struct theader){k, hnav1->len, NULL, NULL, NULL};
+					*hnav1 = (struct theader){hnav1->data, k, hnav1->len, NULL, NULL, NULL};
 					++hnav1;
 				} else {														/* coefficient lists already exist, so now we need to search through them */
 /*
@@ -273,7 +272,7 @@ int STABIL(unsigned long* matrix, unsigned long n, unsigned long* d)
 								tnav1 = hnav1->data + hnav1->len;				/* move tnav1 to the after end of hnav1's data block in preparation for next iteration of loop over (u,v) */
 								break;
 							}
-						} while (hnav2 = hnav2->down);
+						} while ((hnav2 = hnav2->down));
 						if (!hnav2) {											/* we didn't find a class to merge (u,v) into, so we need to make a new class on the end of this linked list */
 							hnav1->down = NULL;
 							hnav1->color = d_;
@@ -304,7 +303,7 @@ int STABIL(unsigned long* matrix, unsigned long n, unsigned long* d)
 				uv = color_classes[i];
 				do {
 					matrix[uv->row*n+uv->col] = i;
-				} while (uv = uv->next);
+				} while ((uv = uv->next));
 			}
 			
 			if (d_ > *d) {														/* more color classes have been added during this iteration */

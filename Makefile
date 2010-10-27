@@ -1,5 +1,8 @@
 CC=gcc
-CFLAGS=-O3
+CFLAGS=-g -Wall
+
+cli: main.c STABIL.c
+	$(CC) $(CFLAGS) -o STABIL main.c STABIL.c
 
 all: stabil1 stabil2 stabcol
 
