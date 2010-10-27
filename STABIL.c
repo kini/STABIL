@@ -171,14 +171,14 @@ int STABIL(unsigned long* matrix, unsigned long n, unsigned long* d)
 					i = matrix[ua];												/* color of (u,w) */
 					j = matrix[av];												/* color of (w,v) */
 					
-					if (!uw_classes[i]) {										/* begin a linked list for .uv = i; this will be stored in increasing order of j */
+					if (!uw_classes[i]) {										/* begin a linked list for .uw = i; this will be stored in increasing order of j */
 						*newt2 = (struct triple2){j, 1, NULL};
 						uw_classes[i] = newt2++;
 					} else if (j < uw_classes[i]->wv) {							/* we can prepend new triple2, as its j is minimal */
 						*newt2 = (struct triple2){j, 1, uw_classes[i]};
 						uw_classes[i] = newt2++;
 					} else if (j == uw_classes[i]->wv) {						/* this triangle is already at the root - we can increment its count */
-						newt2->coeff++;
+						uw_classes[i]->coeff++;
 					} else {													/* j > uw_classes[i]->wv, so new triple2 will not be minimal - we must insert it appropriately */
 						t2nav1 = uw_classes[i];
 						while (1) {
@@ -218,10 +218,9 @@ int STABIL(unsigned long* matrix, unsigned long n, unsigned long* d)
 	search the block MEMORY, here called "struct triple* triples", for structure coefficient prediction lists matching
 	the one produced by (u,v); if such is found, set (u,v) to that color, else create a new color for (u,v)
 */
-				if (hnav1 == theaders) {										/* we're still on the first edge of color k, so we need to start building our structure of lists in block "triples" */
+				if (hnav1 == theaders)											/* we're still on the first edge of color k, so we need to start building our structure of lists in block "triples" */
 					*hnav1 = (struct theader){hnav1->data, k, hnav1->len, NULL, NULL, NULL};
-					++hnav1;
-				} else {														/* coefficient lists already exist, so now we need to search through them */
+				else {															/* coefficient lists already exist, so now we need to search through them */
 /*
 	The coefficient lists, one for each class of edges of color k, live in the memory block "triples", and are arranged
 	in several linked lists, each containing coefficient lists of a certain length. These linked lists are in turn
@@ -265,18 +264,19 @@ int STABIL(unsigned long* matrix, unsigned long n, unsigned long* d)
 									tnav1->uw != tnav2->uw ||
 									tnav1->wv != tnav2->wv ||
 									tnav1->coeff != tnav2->coeff
-								) break;
+								) break;										/* found a mismatch, so get out of here */
 							}
 							if (i == hnav1->len) {								/* didn't find any mismatches, so we have found the correct class */
 								hnav1->color = hnav2->color;
-								tnav1 = hnav1->data + hnav1->len;				/* move tnav1 to the after end of hnav1's data block in preparation for next iteration of loop over (u,v) */
-								break;
+								break;											/* no need to search further down the linked list, so get out of here */
+							}
+							if (!hnav2->down) {									/* there are no more classes in this linked list, so we need to create a new one and append it */
+								hnav1->down = NULL;
+								hnav1->color = d_;
+								hnav2->down = hnav1;
+								break;											/* we're done here */
 							}
 						} while ((hnav2 = hnav2->down));
-						if (!hnav2) {											/* we didn't find a class to merge (u,v) into, so we need to make a new class on the end of this linked list */
-							hnav1->down = NULL;
-							hnav1->color = d_;
-						}
 					}
 				}
 				
@@ -287,12 +287,16 @@ int STABIL(unsigned long* matrix, unsigned long n, unsigned long* d)
 				} else
 					uv_ = uv;
 				uv = uv_->next;
-
-				if (hnav1->color == d_) {										/* if new color was added, go to next free color and next free space for a header in void* triples */
+				
+				if (hnav1->color == d_) {										/* if a new color was added, go to next free color and next free space for a header in block "theaders" */
 					++d_;
 					++hnav1;
-				}
-
+				} else if (hnav1 == theaders)									/* if k was "added" (i.e. if this was the first edge), d_ doesn't need to increase, but the header and data still need
+																					to be preserved */
+					++hnav1;
+				else
+					tnav1 = hnav1->data;										/* tnav1 should by this point naturally be after hnav1's data block, and needs to be moved back */
+				
 				if (theaders + theaders_len - hnav1 < 1 || triples + triples_len - tnav1 < n) {
 					overflow = 1;												/* if no more space for coeff lists and headers, mark an overflow */
 					++d_;														/* increment d_ (perhaps one more time) in advance to provide a color class of edges (d-1) found after overflow */
