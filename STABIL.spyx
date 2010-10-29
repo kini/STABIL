@@ -12,41 +12,55 @@ from sage.misc.flatten import flatten
 cdef extern from "STABIL.c":
 	int STABIL(unsigned long* matrix, unsigned long n, unsigned long* d)
 
-def WL(mat):
+def WL(mat, fix_colors=True, algorithm="STABIL"):
 	"""Perform Weisfeiler-Leman refinement on a matrix.
 	
 	Arguments:
 	
 	mat -- a square Sage matrix whose set of entries is the set of consecutive integers from 0 to some d-1 and whose diagonal entries do not occur outside the diagonal
+
+	Optional Arguments:
+
+	fix_colors -- if true, we attempt to fix malformed data. This process may also alter otherwise valid data.
+
+	algorithm -- choose the algorithm to use. Currently supported algorithms are: "STABIL" (default)
 	
 	Returns the Weisfeiler-Leman refinement of mat
 	
 	"""
-	cdef unsigned long* cmatrix
-	cdef unsigned long d
+	cdef unsigned long* c_matrix
+	cdef unsigned long c_d
 	if (mat.nrows() != mat.ncols()):
 		raise ValueError, "Malformed input data! Please provide a square matrix."
 	n = mat.nrows()
-	
-	# prepare C variables to pass to STABIL()
-	cmatrix = <unsigned long*>malloc(n*n*sizeof(unsigned long))
 	mat = [x for y in mat for x in y]
-	for i in range(n*n):
-		cmatrix[i] = mat[i]
-	d = max(mat) + 1 # TODO: remap the entries of the matrix to make them fit the consecutivity conditions
 	
+	# fix colors, or not
+	if (fix_colors):
+		entry_map = dict([(y,x) for (x,y) in enumerate(set([mat[i*n+i] for i in range(n)]))])
+		k = len(entry_map)
+		entry_map.update([(y,x+k) for (x,y) in enumerate(set([mat[i*n+j] for i in range(n) for j in range(n) if i != j]))])
+		mat = [entry_map[x] for x in mat]
+		c_d = len(entry_map)
+	else:
+		c_d = max(mat) + 1
+	
+	# prepare C matrix for passing to STABIL()
+	c_matrix = <unsigned long*>malloc(n*n*sizeof(unsigned long))
+	for i in range(n*n):
+		c_matrix[i] = mat[i]
+
 	# run STABIL() and interpret the results
 	try:
-		result = STABIL(cmatrix, n, &d)
+		result = STABIL(c_matrix, n, &c_d)
 		if (result == 1):
 			raise ValueError, "Malformed input data! Entries of matrix must consist, as a set, of consecutive integers from 0 to some d-1, and diagonal and non-diagonal entries must be disjoint."
 		elif (result == 2):
 			raise MemoryError, "Could not allocate enough memory!"
 		elif (result == 3):
 			raise OverflowError, "Predicted overflow! Please do not use matrices larger than 65535x65535."
-		result = Matrix(n, n, [cmatrix[x] for x in range(n*n)])
-
+		result = Matrix(n, n, [c_matrix[x] for x in range(n*n)])
 	finally:
-		free(cmatrix)
+		free(c_matrix)
 	
 	return result
