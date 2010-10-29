@@ -37,14 +37,19 @@ def WL(mat, fix_colors=True, algorithm="STABIL"):
 	
 	# fix colors, or not
 	if (fix_colors):
-		entry_map = dict([(y,x) for (x,y) in enumerate(set([mat[i*n+i] for i in range(n)]))])
-		k = len(entry_map)
-		entry_map.update([(y,x+k) for (x,y) in enumerate(set([mat[i*n+j] for i in range(n) for j in range(n) if i != j]))])
-		mat = [entry_map[x] for x in mat]
-		c_d = len(entry_map)
+		diag_map = dict([(y,x) for (x,y) in enumerate(set([mat[i*n+i] for i in range(n)]))])
+		c_d = len(diag_map)
+		offdiag_map = dict([(y,x+c_d) for (x,y) in enumerate(set([mat[i*n+j] for i in range(n) for j in range(n) if i != j]))])
+		c_d += len(offdiag_map)
+		for i in range(n):
+			for j in range(n):
+				if (i == j):
+					mat[i*n + j] = diag_map[mat[i*n + j]]
+				else:
+					mat[i*n + j] = offdiag_map[mat[i*n + j]]
 	else:
 		c_d = max(mat) + 1
-	
+
 	# prepare C matrix for passing to STABIL()
 	c_matrix = <unsigned long*>malloc(n*n*sizeof(unsigned long))
 	for i in range(n*n):
