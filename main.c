@@ -49,7 +49,8 @@ int main (int argc, char* argv[]) {
 	case EXIT_BAD_INPUT:
 		fprintf(stderr, "HALT: Malformed input data!\n");
 		fprintf(stderr, "      Enter first a rank n, then a dimension d, then the entries of a matrix\n");
-		fprintf(stderr, "      of dimension n x n whose entries are as a set {0, 1, ..., d-1}.\n");
+		fprintf(stderr, "      of dimension n x n whose entries are, as a set, {0, 1, ..., d-1} and whose\n");
+		fprintf(stderr, "      diagonal and off-diagonal entries are disjoint.\n");
 		break;
 	case EXIT_ALLOC_ERROR:
 		fprintf(stderr, "HALT: Could not allocate sufficient memory!\n");

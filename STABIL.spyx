@@ -5,3 +5,48 @@
 #	- Keshav Kini <kini@member.ams.org>, 2010-10-14
 #
 
+from stdlib cimport *
+from sage.matrix.constructor import Matrix
+from sage.misc.flatten import flatten
+
+cdef extern from "STABIL.c":
+	int STABIL(unsigned long* matrix, unsigned long n, unsigned long* d)
+
+def WL(mat):
+	"""Perform Weisfeiler-Leman refinement on a matrix.
+	
+	Arguments:
+	
+	mat -- a square Sage matrix whose set of entries is the set of consecutive integers from 0 to some d-1 and whose diagonal entries do not occur outside the diagonal
+	
+	Returns the Weisfeiler-Leman refinement of mat
+	
+	"""
+	cdef unsigned long* cmatrix
+	cdef unsigned long d
+	if (mat.nrows() != mat.ncols()):
+		raise ValueError, "Malformed input data! Please provide a square matrix."
+	n = mat.nrows()
+	
+	# prepare C variables to pass to STABIL()
+	cmatrix = <unsigned long*>malloc(n*n*sizeof(unsigned long))
+	mat = [x for y in mat for x in y]
+	for i in range(n*n):
+		cmatrix[i] = mat[i]
+	d = max(mat) + 1 # TODO: remap the entries of the matrix to make them fit the consecutivity conditions
+	
+	# run STABIL() and interpret the results
+	try:
+		result = STABIL(cmatrix, n, &d)
+		if (result == 1):
+			raise ValueError, "Malformed input data! Entries of matrix must consist, as a set, of consecutive integers from 0 to some d-1, and diagonal and non-diagonal entries must be disjoint."
+		elif (result == 2):
+			raise MemoryError, "Could not allocate enough memory!"
+		elif (result == 3):
+			raise OverflowError, "Predicted overflow! Please do not use matrices larger than 65535x65535."
+		result = Matrix(n, n, [cmatrix[x] for x in range(n*n)])
+
+	finally:
+		free(cmatrix)
+	
+	return result

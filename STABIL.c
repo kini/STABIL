@@ -107,6 +107,9 @@ int STABIL(unsigned long* matrix, unsigned long n, unsigned long* d)
 			else if (color_type[matrix[ab]] != 1 + (a == b))
 				return EXIT_BAD_INPUT;											/* die if diagonal/off-diagonal conflict found */
 		}
+	for (i = 0; i < *d; ++i)
+		if (!color_type[i])
+			return EXIT_BAD_INPUT;												/* die if any color in range is not found */
 	free(color_type);															/* we don't care about this anymore */
 	
 	
