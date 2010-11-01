@@ -40,30 +40,33 @@ int i,j,rank,vert;
 int graph[maxvert][maxvert];
 long time; float t;
 long start_time,end_time;
+if (narg > 1)
 f=fopen(arg[1],"r");        /* char */
-if (f == NULL) { printf("\n file does not exist\n"); exit(0);}
+else f = stdin;
+if (f == NULL) { fprintf(stderr, "\n file does not exist\n"); exit(0);}
 fscanf (f,"%d%d",&rank,&vert);
 for (i=0;i<vert;i++) for(j=0;j<vert;j++) fscanf (f, "%d", &graph[i][j]);
 i=edgepack (graph,rank,vert,color); 
-if(i==0) {printf("please check your input!\n"); return;}
-printf ("\n\n number of colors: ");
+if(i==0) {fprintf(stderr, "please check your input!\n"); return;}
+/*printf ("\n\n number of colors: ");*/
 
 start_time=clock()/1000;
 stabil (&rank,vert,graph,color);
 end_time=clock()/1000-start_time;
 
-printf("\b\b\b\b\b\b%6d",rank);
+printf("%d \n%d \n",rank,vert);
 for(i=0; i<rank; i++) color[i]->row=-1; j=0;
 for(i=0; i<vert; ++i) {
  if(color[graph[i][i]]->row<0) color[graph[i][i]]->row=j++;};
-printf ("\n\n number of cells: %6d", j);
+/*printf ("\n\n number of cells: %6d", j);*/
 for(i=0; i<rank; ++i) if(color[i]->row<0) color[i]->row=j++;
-printf("\n\n adjacency matrix of the cellular algebra:\n\n");
+/*printf("\n\n adjacency matrix of the cellular algebra:\n\n");*/
  for(i=0; i<vert; ++i) { for(j=0; j<vert; ++j) { 
   graph[i][j]=color[graph[i][j]]->row;
-  if(graph[i][j] <10) printf("  %d ",graph[i][j]);
-  else {if(graph[i][j] <100) printf(" %d ",graph[i][j]);
-  else printf("%d ",graph[i][j]);};} printf("\n");};
+  printf("%d ", graph[i][j]);
+/*  if(graph[i][j] <10) printf("  %d ",graph[i][j]); 
+  else {if(graph[i][j] <100) printf(" %d ",graph[i][j]); 
+  else printf("%d ",graph[i][j]);};*/} printf("\n");};
 /* printf("\n\n%ld msec \n\n",end_time); */
 }
 
@@ -105,7 +108,7 @@ int memory[memlength];
 struct edge *free,*w,*o,*oo;
 gamma=&memory[0];
 rank=*arank;
-printf("%6d",rank); fflush(stdout);
+/*printf("%6d",rank); fflush(stdout);*/
 do {   /*  until new colors would not appear */
   truth=0;                 /* new colors were not appear */
   newrank=rank;
@@ -129,8 +132,8 @@ do {   /*  until new colors would not appear */
            if(q==-1) *(gamma+oldq+4)=-1; else{ if(oldq!=-1){
            if(*(gamma+p+3)!=-1) *(gamma+*(gamma+p+3)+2)=*(gamma+p+2);
            if(*(gamma+p+2)!=-1) *(gamma+*(gamma+p+2)+3)=*(gamma+p+3);};};}
-       if (oldnrank!=newrank) {
-          printf("\b\b\b\b\b\b%6d",newrank); fflush(stdout);}
+/*       if (oldnrank!=newrank) {
+          printf("\b\b\b\b\b\b%6d",newrank); fflush(stdout);} */
        if (c!=k)
         {
          o->ptr=w->ptr;
