@@ -145,8 +145,8 @@ int STABIL(unsigned long* matrix, unsigned long n, unsigned long* d)
 		d_ = *d;																/* original colors run from 0 to d-1, so d is the first available new color */
 		for (k = 0; k < *d; ++k) {												/* for each color k... */
 			overflow = 0;
-			hnav1 = theaders;													/* for navigation in "theaders" */
-			tnav1 = triples;													/* for navigation in "triples" */
+			hnav1 = theaders;													/* theaders is overwritten for each new color k */
+			tnav1 = triples;													/* triples is overwritten for each new color k */
 			uv = color_classes[k];												/* get the first edge of color k - this must always exist */
 			uv_ = uv;															/* old (u,v) */
 			if (uv->next == NULL)
@@ -163,7 +163,7 @@ int STABIL(unsigned long* matrix, unsigned long n, unsigned long* d)
 /*	STEP 1(i)
 	compute the predicted structure coefficients (in struct triple2 linked lists)
 */
-				newt2 = triple2s;
+				newt2 = triple2s;												/* triple2s is overwritten for each new edge (u,v) */
 				for (i = 0; i < *d; ++i)
 					uw_classes[i] = NULL;										/* zero the pointers before building the linked lists of predicted coefficient data */
 				for (
@@ -181,7 +181,7 @@ int STABIL(unsigned long* matrix, unsigned long n, unsigned long* d)
 						*newt2 = (struct triple2){j, 1, uw_classes[i]};
 						uw_classes[i] = newt2++;
 					} else if (j == uw_classes[i]->wv) {						/* this triangle is already at the root - we can increment its count */
-						uw_classes[i]->coeff++;
+						++uw_classes[i]->coeff;
 					} else {													/* j > uw_classes[i]->wv, so new triple2 will not be minimal - we must insert it appropriately */
 						t2nav1 = uw_classes[i];
 						while (1) {
@@ -234,7 +234,7 @@ int STABIL(unsigned long* matrix, unsigned long n, unsigned long* d)
 	search through this structure looking for a match with the current (u,v)'s coefficient list, or alternatively a
 	place to insert it into the structure if it represents a new color class.
 */
-					hnav2 = theaders;
+					hnav2 = theaders;											/* start at the header of the first edge of color k, wherever it may be in the structure */
 					while (hnav2->len > hnav1->len && hnav2->left)				/* move left until *hnav2 <= *hnav1 in length or reach left end */
 						hnav2 = hnav2->left;
 					while (hnav2->len < hnav1->len && hnav2->right)				/* move right until *hnav2 >= *hnav1 in length or reach right end */
@@ -284,18 +284,18 @@ int STABIL(unsigned long* matrix, unsigned long n, unsigned long* d)
 				}
 				
 				if (hnav1->color != k) {										/* this won't happen on the first (u,v), so inside we can assume uv_ is uv's predecessor */
-					uv_->next = uv->next;										
-					uv->next = color_classes[hnav1->color];						/* prepend to newly refined color's linked list */
+					uv_->next = uv->next;										/* remove uv from color class k, which we are iterating through */
+					uv->next = color_classes[hnav1->color];						/* prepend to uv to newly refined color's linked list */
 					color_classes[hnav1->color] = uv;							/* rebase list */
 				} else
-					uv_ = uv;
-				uv = uv_->next;
+					uv_ = uv;													/* uv has not been recolored, so move along color class k normally */
+				uv = uv_->next;													/* get next uv */
 				
 				if (hnav1->color == d_) {										/* if a new color was added, go to next free color and next free space for a header in block "theaders" */
 					++d_;
 					++hnav1;
-				} else if (hnav1 == theaders)									/* if k was "added" (i.e. if this was the first edge), d_ doesn't need to increase, but the header and data still need
-																					to be preserved */
+				} else if (hnav1 == theaders)									/* if color k was "added" (i.e. if this was the first edge), d_ doesn't need to increase, but the header and data still
+																					need to be preserved */
 					++hnav1;
 				else
 					tnav1 = hnav1->data;										/* tnav1 should by this point naturally be after hnav1's data block, and needs to be moved back */
@@ -306,7 +306,7 @@ int STABIL(unsigned long* matrix, unsigned long n, unsigned long* d)
 				}
 			} while (uv != NULL);												/* move on to the next color when this color is exhausted */
 
-			for (i = *d; i < d_; ++i) {											/* save color changes to matrix; no need to check i < *d as old colors are only shrunk */
+			for (i = *d; i < d_; ++i) {											/* save color changes to matrix; no need to check i < *d as old color classes are only shrunk */
 				uv = color_classes[i];
 				do {
 					matrix[uv->row*n+uv->col] = i;
