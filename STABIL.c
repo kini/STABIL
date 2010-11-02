@@ -296,6 +296,9 @@ int STABIL(unsigned long* matrix, unsigned long n, unsigned long* d)
 				}
 			} while (uv);														/* move on to the next color when this color is exhausted */
 			
+			if (overflow && !color_classes[d_ - 1])
+				--d_;															/* undo provisional incrementation of d_ performed above if no new edges were added after we went into overflow mode */
+			
 			for (i = *d; i < d_; ++i) {											/* save color changes to matrix; no need to check i < *d as old color classes are only shrunk */
 				uv = color_classes[i];
 				do {

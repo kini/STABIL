@@ -212,8 +212,7 @@ void main(int narg, char *arg[10]){
  struct color_class *pc;
  struct multiset *pm1, *pm2, S[vm][vm];
  struct triangle *pt;
-
- f=fopen(arg[1],"r");
+ if (narg < 2) f = stdin; else f=fopen(arg[1],"r");
  if (f==NULL) { fprintf(stderr, "\n file does not exist\n"); exit(0);}
  fscanf (f,"%d%d",&newcolor,&n); newcolor--;
  for(i=0; i<n; ++i) for(j=0; j<n; ++j) { fscanf(f,"%d",&S[i][j].a);
