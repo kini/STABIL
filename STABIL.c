@@ -21,35 +21,20 @@
 #define ALLOC(X, Y) (X = malloc(Y * sizeof *(X)))
 #define CALLOC(X, Y) (X = calloc(Y, sizeof *(X)))
 
+#ifdef DEBUG
+	#include "STABIL-tests.h"
+	#define DEBUG_PRINT_MATRIX() print_matrix(matrix, n, *d);
+	#define DEBUG_PRINT_TRIPLES() print_triples(triples, theaders, hnav1, k, *d)
+#else
+	#define DEBUG_PRINT_MATRIX()
+	#define DEBUG_PRINT_TRIPLES()
+#endif
+
 #include <stdlib.h>
 #include "STABIL.h"
 
-struct edge {																	/* linkable edge struct */
-	unsigned long row;
-	unsigned long col;
-	struct edge* next;
-};
-struct triple {																	/* coeff indicates proto- p_{i,j}^k for current edge (u,v) during step 1 of STABIL */
-	unsigned long uw;															/* color of (u,w) */
-	unsigned long wv;															/* color of (w,v) */
-	unsigned long coeff;														/* p_{uw,wv}^k as predicted by current edge (u,v) of color k */
-};
-struct triple2 {																/* linkable version of struct triple, pre-sorted by .uw */
-	unsigned long wv;
-	unsigned long coeff;
-	struct triple2* next;
-};
-struct theader {																/* a header for lists of struct triple elements, making them both doubly (left/right) and singly (down) linked */
-	struct triple* data;														/* where in the array of triples the list this header describes begins */
-	unsigned long color;														/* stores a new (refined) color for the edge that generated the coefficient list */
-	unsigned long len;															/* length of the subsequent list (measured in sizeof struct triple)*/
-	struct theader* left;														/* pointer to the header to the "left" (header of immediately shorter list) */
-	struct theader* right;														/* pointer to the header to the "right" (header of immediately longer list) */
-	struct theader* down;														/* pointer to the header "below" (header of next list of same length) */
-};
-
 /*	STABIL()
-
+	
 	STABIL, an implementation of the Weisfeiler-Leman refinement algorithm for coherent configurations. The function
 	accepts a coherent configuration in the form of an integer matrix (called a generalized graph) "matrix", which is
 	equal to $\sum_{i=0}^{d-1} i A_i$, where $A_0,\dots,A_{d-1}$ are the elements of the coherent configuration as
@@ -63,7 +48,7 @@ int STABIL(unsigned long* matrix, unsigned long n, unsigned long* d)
 																					computation more than once if n^2 blocks proves insufficient (i.e. too much disagreement in predicted structure
 																					coefficients) */
 	const unsigned long theaders_len = n*n;										/* naively, up to n^2 new colors could be discovered per old color per iteration, though this is actually impossible */
-
+	
 	/* (pointers to) large-scale structures */
 	struct edge** color_classes;												/* a list of root pointers of linked lists of edge structs, indexed by color */
 	struct edge* edges;															/* memory for the linked lists in struct edge** color_classes to live in */
@@ -111,6 +96,7 @@ int STABIL(unsigned long* matrix, unsigned long n, unsigned long* d)
 		if (!color_type[i])
 			return EXIT_BAD_INPUT;												/* die if any color in range is not found */
 	free(color_type);															/* we don't care about this anymore */
+	DEBUG_PRINT_MATRIX();
 	
 	
 /*	STEP 0
@@ -160,6 +146,8 @@ int STABIL(unsigned long* matrix, unsigned long n, unsigned long* d)
 					uv = uv_->next;												/* move on to next (u,v) of original color k */
 					continue;
 				}
+				
+				
 /*	STEP 1(i)
 	compute the predicted structure coefficients (in struct triple2 linked lists)
 */
@@ -201,6 +189,7 @@ int STABIL(unsigned long* matrix, unsigned long n, unsigned long* d)
 						}
 					}
 				}
+				
 				
 /*	STEP 1(ii)
 	collect the nonzero predicted structure coefficients into the block "triples"
@@ -302,10 +291,10 @@ int STABIL(unsigned long* matrix, unsigned long n, unsigned long* d)
 				
 				if (theaders + theaders_len - hnav1 < 1 || triples + triples_len - tnav1 < n) {
 					overflow = 1;												/* if no more space for coeff lists and headers, mark an overflow */
-					++d_;														/* increment d_ (perhaps one more time) in advance to provide a color class of edges (d-1) found after overflow */
+					++d_;														/* increment d_ (again, maybe) in advance to provide a color class of edges (d-1) found after overflow */
 				}
-			} while (uv != NULL);												/* move on to the next color when this color is exhausted */
-
+			} while (uv);														/* move on to the next color when this color is exhausted */
+			
 			for (i = *d; i < d_; ++i) {											/* save color changes to matrix; no need to check i < *d as old color classes are only shrunk */
 				uv = color_classes[i];
 				do {
@@ -317,15 +306,19 @@ int STABIL(unsigned long* matrix, unsigned long n, unsigned long* d)
 				*d = d_;
 				stable = 0;
 			}
-		}
+			
+			DEBUG_PRINT_TRIPLES();
+		}																		/* next color */
+		
+		DEBUG_PRINT_MATRIX();
 	} while(!stable);															/* continue until the process stabilizes */
-
+	
 	free(color_classes);
 	free(edges);
 	free(uw_classes);
 	free(triple2s);
 	free(theaders);
 	free(triples);
-
+	
 	return EXIT_SUCCESS;
 }

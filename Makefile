@@ -1,6 +1,9 @@
 CC=gcc
 CFLAGS=-g -Wall
 
+cli-testing: main.c STABIL.c
+	$(CC) $(CFLAGS) -D DEBUG -o STABIL main.c STABIL.c
+
 cli: main.c STABIL.c
 	$(CC) $(CFLAGS) -o STABIL main.c STABIL.c
 
