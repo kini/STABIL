@@ -17,9 +17,9 @@ stabcol: germ1.c
 
 all: cli old stabcol
 
-test: STABCOL STABIL.old STABIL
+test: all
 	./STABCOL 1.in; ./STABIL.old 1.in; ./STABIL 1.in
 
 clean:
-	-rm STABIL STABIL.old STABCOL *.o *.out *.exe
+	-rm -f STABIL STABIL.old STABCOL *.o *.out *.exe
 

@@ -214,21 +214,21 @@ void main(int narg, char *arg[10]){
  struct triangle *pt;
 
  f=fopen(arg[1],"r");
- if (f==NULL) { printf("\n file does not exist\n"); exit(0);}
+ if (f==NULL) { fprintf(stderr, "\n file does not exist\n"); exit(0);}
  fscanf (f,"%d%d",&newcolor,&n); newcolor--;
  for(i=0; i<n; ++i) for(j=0; j<n; ++j) { fscanf(f,"%d",&S[i][j].a);
   if(S[i][j].a<0 || S[i][j].a>newcolor) 
-   { printf("please check your input!\n"); return;};
+   { fprintf(stderr, "please check your input!\n"); return;};
   S[i][j].joey=0; S[i][j].l=0; S[i][j].c=0;};
  for(pc=ewc; pc<ewc+n*n; pc++) pc->m=0; 
  for(i=0; i<n; ++i) ewc[S[i][i].a].m+=(ewc[S[i][i].a].m)?0:1;
  for(i=0; i<n; ++i) for(j=i+1; j<n; ++j) {
-   if(ewc[S[i][j].a].m==1) { printf("please check your input!\n"); return;}
+   if(ewc[S[i][j].a].m==1) { fprintf(stderr, "please check your input!\n"); return;}
    else ewc[S[i][j].a].m=2;
-   if(ewc[S[j][i].a].m==1) { printf("please check your input!\n"); return;}
+   if(ewc[S[j][i].a].m==1) { fprintf(stderr, "please check your input!\n"); return;}
    else ewc[S[j][i].a].m=2;};
  for(pc=ewc; pc<=ewc+newcolor; pc++) {
-  if(pc->m==0) { printf("please check your input!\n"); return;}
+  if(pc->m==0) { fprintf(stderr, "please check your input!\n"); return;}
   else pc->m=0;};
 
  pm1=0;
@@ -236,24 +236,25 @@ void main(int narg, char *arg[10]){
  pm1=presort(&S[0][0]);
  pm2=pm1; pm1->prev=0;
  while(pm1->next) {(pm1->next)->prev=pm1; pm1=pm1->next;};
- maxcolor=0; printf("\nnumber of colors: %6d",newcolor+1);
+ maxcolor=0; /* printf("\nnumber of colors: %6d",newcolor+1); */
  cpu=clock()/1000; i=0;
  while(newcolor>maxcolor) { i++;
-  if((pt=triangles(S))==0) { printf("\nspaceproblems!\n"); newcolor=maxcolor;}
+  if((pt=triangles(S))==0) { fprintf(stderr, "\nspaceproblems!\n"); newcolor=maxcolor;}
   else{ maxcolor=newcolor;
    pt=sort_triangles(pt);
-   pm1=multisets(pt, pm2); pm2=pm1; printf("\b\b\b\b\b\b%6d",newcolor+1);
+   pm1=multisets(pt, pm2); pm2=pm1; /* printf("\b\b\b\b\b\b%6d",newcolor+1); */
    fflush(stdout);};};
  cpu=clock()/1000-cpu;
  for(pc=ewc; pc<=ewc+maxcolor; pc++) pc->m=-1; j=0;
  for(i=0; i<n; ++i) { if(ewc[S[i][i].a].m<0) ewc[S[i][i].a].m=j++;};
- printf("\n\nnumber of cells:  %6d",j);
+ /* printf("\n\nnumber of cells:  %6d",j); */
  for(i=0; i<=maxcolor; ++i) if(ewc[i].m<0) ewc[i].m=j++;
 /* printf("\n%ld msec",cpu); */
- printf("\n\nadjacency matrix of the cellular algebra:\n\n");	
+ /* printf("\n\nadjacency matrix of the cellular algebra:\n\n");	*/
+ printf("%d \n%d \n", newcolor + 1, n);
  for(i=0; i<n; ++i) { for(j=0; j<n; ++j) { S[i][j].a=ewc[S[i][j].a].m;
-  if(S[i][j].a <10) printf("  %d ",S[i][j].a);
+  /*if(S[i][j].a <10) printf("  %d ",S[i][j].a);
   else {if(S[i][j].a <100) printf(" %d ",S[i][j].a);
-  else printf("%d ",S[i][j].a);};} printf("\n");};
+  else printf("%d ",S[i][j].a);};*/ printf("%d ", S[i][j].a);} printf("\n");};
 }
 
