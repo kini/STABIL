@@ -63,7 +63,7 @@ int STABIL(unsigned long* matrix, unsigned long n, unsigned long* d)
 	unsigned long a, b, i, j, k;												/* counters - a,b are vertices, i,j,k are colors corresponding to the indices of p_{i,j}^k, the structure coefficients */
 	unsigned long ab, ua, av;													/* 2-dimensional iterators */
 	unsigned long d_;															/* next available color for new color classes within the refinement loop on a fixed color k; current total number of
-																					color classes*/
+																					color classes */
 	
 	/* navigational pointers */
 	struct edge* uv;															/* pointer to current edge (u,v) */
@@ -261,7 +261,8 @@ int STABIL(unsigned long* matrix, unsigned long n, unsigned long* d)
 							if (i == hnav1->len) {								/* didn't find any mismatches, so we have found the correct class */
 								hnav1->color = hnav2->color;
 								break;											/* no need to search further down the linked list, so get out of here */
-							}
+							} else
+								tnav1 = hnav1->data + hnav1->len;				/* reset tnav1 to point to the beginning of free memory in struct triple* triples */
 							if (!hnav2->down) {									/* there are no more classes in this linked list, so we need to create a new one and append it */
 								hnav1->down = NULL;
 								hnav1->color = d_;

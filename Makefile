@@ -1,26 +1,25 @@
 CC=gcc
+## Release
+#CFLAGS=-O2
+## Development
 CFLAGS=-g -Wall
-
-cli-testing: main.c STABIL.c
-	$(CC) $(CFLAGS) -D DEBUG -o STABIL main.c STABIL.c
+## Debugging
+#CFLAGS=-g -Wall -D DEBUG
 
 cli: main.c STABIL.c
 	$(CC) $(CFLAGS) -o STABIL main.c STABIL.c
 
-all: stabil1 stabil2 stabcol
+old: rus2.c
+	$(CC) $(CFLAGS) -o STABIL.old rus2.c
 
-stabcol: germ1.c 
-	$(CC) $(CFLAGS) -o stabcol germ1.c 
+stabcol: germ1.c
+	$(CC) $(CFLAGS) -o STABCOL germ1.c
 
-stabil1: rus1.c
-	$(CC) $(CFLAGS) -o stabil1 rus1.c
+all: cli old stabcol
 
-stabil2: rus2.c
-	$(CC) $(CFLAGS) -o stabil2 rus2.c
-
-test: all
-	-./stabcol input1; ./stabil1 input1; ./stabil2 input1
+test: STABCOL STABIL.old STABIL
+	./STABCOL 1.in; ./STABIL.old 1.in; ./STABIL 1.in
 
 clean:
-	-rm stabil1 stabil2 stabcol *.o *.out *.exe
+	-rm STABIL STABIL.old STABCOL *.o *.out *.exe
 
