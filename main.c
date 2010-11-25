@@ -48,7 +48,7 @@ int main (int argc, char* argv[]) {
     switch(result) {
     case EXIT_BAD_INPUT:
         fprintf(stderr, "HALT: Malformed input data!\n");
-        fprintf(stderr, "      Enter first a rank n, then a dimension d, then the entries of a matrix\n");
+        fprintf(stderr, "      Enter first a dimension d, then a rank n, then the entries of a matrix\n");
         fprintf(stderr, "      of dimension n x n whose entries are, as a set, {0, 1, ..., d-1} and whose\n");
         fprintf(stderr, "      diagonal and off-diagonal entries are disjoint.\n");
         break;
