@@ -103,7 +103,7 @@ int STABIL(unsigned long* matrix, unsigned long n, unsigned long* d)
     populate struct edge** color_classes
 */
     if (
-        !CALLOC(color_classes, n*n) ||                                          /* we may eventually have as many as n^2 colors */
+        !CALLOC(color_classes, n*n + 1) ||                                      /* we may eventually have as many as n^2 colors; also need one more space for bound checking */
         !ALLOC(edges, n*n)
     )
         return EXIT_ALLOC_ERROR;
@@ -296,7 +296,9 @@ int STABIL(unsigned long* matrix, unsigned long n, unsigned long* d)
                 }
             } while (uv);                                                       /* move on to the next color when this color is exhausted */
             
-            if (overflow && !color_classes[d_ - 1])
+            if (overflow && !color_classes[d_ - 1])                             /* in obscure cases where we overflow on the last step after refining to the discrete configuration (with n^2 colors),
+                                                                                    it is possible that d_ might at this stage be n^2 + 1, hence the necessity for color_classes to be calloc'd to
+                                                                                    length n^2 + 1 rather than simply n^2. */
                 --d_;                                                           /* undo provisional incrementation of d_ performed above if no new edges were added after we went into overflow mode */
             
             for (i = *d; i < d_; ++i) {                                         /* save color changes to matrix; no need to check i < *d as old color classes are only shrunk */
