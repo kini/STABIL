@@ -61,7 +61,6 @@ Refine a certain test matrix::
 from stdlib cimport *
 from sage.matrix.constructor import Matrix
 from sage.graphs.graph import Graph, DiGraph
-from sage.misc.flatten import flatten
 
 cdef extern from "STABIL.c":
     int STABIL(unsigned long* matrix, unsigned long n, unsigned long* d)
@@ -212,4 +211,5 @@ def GraphWL(g, digraph=True, ignore_weights=False):
     else:
         return Graph(mat, format='weighted_adjacency_matrix')
 
-
+# clean up module namespace
+del Matrix, Graph, DiGraph
