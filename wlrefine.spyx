@@ -58,9 +58,9 @@ Refine a certain test matrix::
 #   - Keshav Kini <kini@member.ams.org>, 2010-10-14
 #
 
-from stdlib cimport *
-from sage.matrix.constructor import Matrix
-from sage.graphs.graph import Graph, DiGraph
+from libc.stdlib cimport *
+import sage.matrix.constructor
+import sage.graphs.graph
 
 cdef extern from "STABIL.c":
     int STABIL(unsigned long* matrix, unsigned long n, unsigned long* d)
@@ -160,7 +160,7 @@ def WL(mat, fix_colors=True, algorithm="STABIL"):
             raise MemoryError, "Could not allocate enough memory!"
         elif (result == 3):
             raise OverflowError, "Predicted overflow! Please do not use matrices larger than 65535x65535."
-        result = Matrix(n, n, [c_matrix[x] for x in range(n*n)])
+        result = sage.matrix.constructor.Matrix(n, n, [c_matrix[x] for x in range(n*n)])
     finally:
         free(c_matrix)
     
@@ -207,9 +207,7 @@ def GraphWL(g, digraph=True, ignore_weights=False):
         mat = WL(g.weighted_adjacency_matrix())
     
     if digraph:
-        return DiGraph(mat, format='weighted_adjacency_matrix')
+        return sage.graphs.graph.DiGraph(mat, format='weighted_adjacency_matrix')
     else:
-        return Graph(mat, format='weighted_adjacency_matrix')
+        return sage.graphs.graph.Graph(mat, format='weighted_adjacency_matrix')
 
-# clean up module namespace
-del Matrix, Graph, DiGraph
