@@ -204,7 +204,7 @@ def GraphWL(g, digraph=True, ignore_weights=False):
     """
     
     if (not g.weighted() or ignore_weights) and not g.has_loops():
-        mat = WL(g.adjacency_matrix() + 2, fix_colors=False)                   # g.adjacency_matrix() is a 0-1 matrix so by setting the diagonal to 2 we satisfy the color conditions for the algorithm
+        mat = WL(g.adjacency_matrix() + 2, fix_colors=False)                    # g.adjacency_matrix() is a 0-1 matrix so setting the diagonal to 2 satisfies the color conditions for the algorithm
     else:
         mat = WL(g.weighted_adjacency_matrix())
     
