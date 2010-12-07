@@ -8,9 +8,11 @@
     The adaptation consists of much rephrasing / renaming, fleshed-out code comments, and a Cython wrapper to
     facilitate usage of the program from Sage or other Python-based environments. Preprocessor constants for hard
     limiting of memory usage have also been done away with in favor of dynamic allocation. The storage requirement has
-    been increased (though not beyond the previous complexity order) in the interest of type safety. For the
-    theoretical details of the algorithm and a discussion of its history, purpose, and applications, please see the
-    paper linked above, which is free-access.
+    been increased (though not beyond the previous complexity order) in the interest of type safety. In the interest of
+    generality, the input conditions have been relaxed to allow for cellular (as opposed to coherent) refinement.
+    Also, some assumptions made about the input are done away with in the interest of robustness. For the theoretical
+    details of the algorithm and a discussion of its history, purpose, and applications, please see the paper linked
+    above, which is free-access.
     
     As the original implementation was released under the GNU General Public License v3, so too is this file and the
     associated helper files.
@@ -18,8 +20,8 @@
     - Keshav Kini <kini@member.ams.org>, 2010-10-05
 */
 
-#define ALLOC(X, Y) (X = malloc(Y * sizeof *(X)))
-#define CALLOC(X, Y) (X = calloc(Y, sizeof *(X)))
+#define ALLOC(X, Y) ((X) = malloc((Y) * sizeof *(X)))
+#define CALLOC(X, Y) ((X) = calloc((Y), sizeof *(X)))
 
 #ifdef DEBUG
     #include "STABIL-tests.h"
@@ -52,7 +54,8 @@ int STABIL(unsigned long* matrix, unsigned long n, unsigned long* d)
     /* (pointers to) large-scale structures */
     struct edge** color_classes;                                                /* a list of root pointers of linked lists of edge structs, indexed by color */
     struct edge* edges;                                                         /* memory for the linked lists in struct edge** color_classes to live in */
-    char* color_type;                                                           /* to keep track of vertex / edge colors */
+    char* color_found;                                                          /* to make sure no color in the range 0 to d-1 is missing from the matrix */
+    unsigned long* opposites;                                                   /* for a particular color k, lists the colors found among the reversals of the edges of color k */
     struct triple2** uw_classes;                                                /* a list of root pointers of linked lists of triple2 structs, indexed by the phantom .uw */
     struct triple2* triple2s;                                                   /* memory for the linked lists in struct triple2** uw_classes to live in */
     struct triple* triples;                                                     /* memory for storing predicted structure coefficients p_{i,j}^k for fixed k */
@@ -61,6 +64,7 @@ int STABIL(unsigned long* matrix, unsigned long n, unsigned long* d)
     /* values */
     char stable, overflow;                                                      /* flags */
     unsigned long a, b, i, j, k;                                                /* counters - a,b are vertices, i,j,k are colors corresponding to the indices of p_{i,j}^k, the structure coefficients */
+    unsigned long c;                                                            /* miscellaneous counter */
     unsigned long ab, ua, av;                                                   /* 2-dimensional iterators */
     unsigned long d_;                                                           /* next available color for new color classes within the refinement loop on a fixed color k; current total number of
                                                                                     color classes */
@@ -80,25 +84,21 @@ int STABIL(unsigned long* matrix, unsigned long n, unsigned long* d)
     
     /* check matrix for shenanigans */
     if (
-        !CALLOC(color_type, *d)
+        !CALLOC(color_found, *d)
     )
         return EXIT_ALLOC_ERROR;
     for (ab = 0, a = 0; a < n; ++a)
         for (b = 0; b < n; ++b, ++ab) {
             if (matrix[ab] < 0 || matrix[ab] >= *d)
                 return EXIT_BAD_INPUT;                                          /* die if out-of-range color found */
-            if (color_type[matrix[ab]] == 0)
-                color_type[matrix[ab]] = 1 + (a == b);                          /* type 1 is off-diagonal (edge), type 2 is diagonal (vertex) */
-            else if (color_type[matrix[ab]] != 1 + (a == b))
-                return EXIT_BAD_INPUT;                                          /* die if diagonal/off-diagonal conflict found */
+            color_found[matrix[ab]] = 1;                                        /* mark this color as found */
         }
     for (i = 0; i < *d; ++i)
-        if (!color_type[i])
+        if (!color_found[i])
             return EXIT_BAD_INPUT;                                              /* die if any color in range is not found */
-    free(color_type);                                                           /* we don't care about this anymore */
+    free(color_found);                                                          /* we don't care about this anymore */
     DEBUG_PRINT_MATRIX();
-    
-    
+        
 /*  STEP 0
     populate struct edge** color_classes
 */
@@ -115,6 +115,53 @@ int STABIL(unsigned long* matrix, unsigned long n, unsigned long* d)
             color_classes[matrix[ab]] = edges + ab;                             /* ... and rebase the linked list */
         }
     
+/*  STEP 0.5
+    enforce closure under edge reversal
+    
+    Note: while the original Weisfeiler-Leman algorithm did this after every iteration, it actually only needs to be
+    done once at the beginning of the algorithm. See O. Bastert's paper "New Ideas for Canonically Computing Graph
+    Algebras" for a proof of this fact, where it is labeled Lemma 2.1.
+*/
+    if (
+        !CALLOC(opposites, n*n/2 + 1)                                           /* opposite classes can neither exceed the number of edges of color i nor 1 + the number of edges NOT of color i */
+    )
+        return EXIT_ALLOC_ERROR;
+    d_ = *d;                                                                    /* this will mark how many colors we've got so far */
+    for (i = 0; i < *d; ++i) {                                                  /* break up each original color class according to what colors are found in its transpose */
+        uv_ = color_classes[i];                                                 /* start with the first edge of color i */
+        uv = uv_->next;
+        if (!uv)
+            break;                                                              /* singleton color classes don't need to be split */
+
+        c = d_;                                                                 /* c marks the first new color added this time */
+        opposites[0] = matrix[uv_->col*n + uv_->row];                           /* the color of the reversal of the first edge of color i, which we will associate with the original color i */
+        do {                                                                    /* continue to check all edges of color i */
+            j = matrix[uv->col*n + uv->row];
+            if (j == opposites[0]) {
+                uv_ = uv;
+                continue;                                                       /* this edge is part of the "original" color class */
+            }
+            for (k = c; k < d_; ++k) {                                          /* this edge is not part of the "original" color class, so check the new classes for this i */
+                if (j == opposites[k - c + 1]) {
+                    uv_->next = uv->next;                                       /* excise uv from the linked list of color class i */
+                    uv->next = color_classes[k];                                /* prepend uv to the linked list of color class k */
+                    color_classes[k] = uv;                                      /* rebase the linked list */
+                    break;                                                      /* no need to check further colors */
+                }
+            }
+            if (k == d_) {                                                      /* this edge is not part of any of the new classes either, so we need to create one more new class */
+                ++d_;
+                opposites[k - c + 1] = j;                                       /* record what the "reversal color" for this new class is */
+                uv_->next = uv->next;                                           /* excise uv from the linked list of color class i */
+                uv->next = NULL;                                                /* create a new linked list with uv */
+                color_classes[k] = uv;                                          /* and let color_classes[k] point to it */
+            }
+            matrix[uv->row*n + uv->col] = k;                                    /* update the matrix */
+        } while ((uv = uv_->next));                                             /* next edge of color i */
+    }
+    free(opposites);                                                            /* we don't care about this anymore */
+    *d = d_;                                                                    /* update the dimension of the configuration */
+    DEBUG_PRINT_MATRIX();
     
 /*  STEP 1
     do computation
@@ -304,7 +351,7 @@ int STABIL(unsigned long* matrix, unsigned long n, unsigned long* d)
             for (i = *d; i < d_; ++i) {                                         /* save color changes to matrix; no need to check i < *d as old color classes are only shrunk */
                 uv = color_classes[i];
                 do {
-                    matrix[uv->row*n+uv->col] = i;
+                    matrix[uv->row*n + uv->col] = i;
                 } while ((uv = uv->next));
             }
             

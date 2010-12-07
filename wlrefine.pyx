@@ -51,7 +51,7 @@ Refine a certain test matrix::
 
 """
 
-#   STABIL.spyx
+#   wlrefine.pyx
 #   
 #   See STABIL.c for an explanation.
 #   
