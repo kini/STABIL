@@ -10,14 +10,13 @@ the graph is a refinement.
 
 AUTHORS:
 
-- Keshav Kini
-
-- Dmitrii Pasechnik
+- Keshav Kini (2010-10-14)
 
 EXAMPLES:
 
 Refine the product with itself of the cyclic graph on five points::
 
+    sage: from sage.graphs.wlrefine import GraphWL
     sage: g = graphs.CycleGraph(5)
     sage: gg = g.cartesian_product(g)
     sage: gg2 = GraphWL(gg)
@@ -28,10 +27,11 @@ Refine the product with itself of the cyclic graph on five points::
 
 Refine a certain test matrix::
 
+    sage: from sage.graphs.wlrefine import WL
     sage: m = Matrix(8, 8, [3, 1, 2, 1, 1, 2, 2, 2, 1, 0, 1, 2, 2, 1, 2, 2, 2,
-    ....:   1, 3, 1, 2, 2, 1, 2, 1, 2, 1, 0, 2, 2, 2, 1, 1, 2, 2, 2, 0, 1, 2,
-    ....:   1, 2, 1, 2, 2, 1, 3, 1, 2, 2, 2, 1, 2, 2, 1, 0, 1, 2, 2, 2, 1, 1,
-    ....:   2, 1, 3])
+    ...   1, 3, 1, 2, 2, 1, 2, 1, 2, 1, 0, 2, 2, 2, 1, 1, 2, 2, 2, 0, 1, 2,
+    ...   1, 2, 1, 2, 2, 1, 3, 1, 2, 2, 2, 1, 2, 2, 1, 0, 1, 2, 2, 2, 1, 1,
+    ...   2, 1, 3])
     sage: m
     [3 1 2 1 1 2 2 2]
     [1 0 1 2 2 1 2 2]
@@ -53,6 +53,9 @@ Refine a certain test matrix::
     [3 5 3 2 2 3 2 1]
 
 """
+# XXX Implicitly continued lines in the sage interpreter start with "....: ",
+# not "... "; doctests do not work unless we use "... ", though. Something to
+# fix?
 
 #   wlrefine.pyx
 #   
@@ -61,7 +64,7 @@ Refine a certain test matrix::
 #   - Keshav Kini <kini@member.ams.org>, 2010-10-14
 #
 
-from libc.stdlib cimport *
+from libc.stdlib cimport malloc, free
 import sage.matrix.constructor
 import sage.graphs.graph
 
@@ -91,11 +94,12 @@ def WL(mat, fix_colors=True, algorithm="STABIL"):
     EXAMPLES:
     
     Refine a certain test matrix::
-
+        
+        sage: from sage.graphs.wlrefine import WL
         sage: m = Matrix(8, 8, [3, 1, 2, 1, 1, 2, 2, 2, 1, 0, 1, 2, 2, 1, 2,
-        ....:   2, 2, 1, 3, 1, 2, 2, 1, 2, 1, 2, 1, 0, 2, 2, 2, 1, 1, 2, 2, 2,
-        ....:   0, 1, 2, 1, 2, 1, 2, 2, 1, 3, 1, 2, 2, 2, 1, 2, 2, 1, 0, 1, 2,
-        ....:   2, 2, 1, 1, 2, 1, 3])
+        ...   2, 2, 1, 3, 1, 2, 2, 1, 2, 1, 2, 1, 0, 2, 2, 2, 1, 1, 2, 2, 2,
+        ...   0, 1, 2, 1, 2, 1, 2, 2, 1, 3, 1, 2, 2, 2, 1, 2, 2, 1, 0, 1, 2,
+        ...   2, 2, 1, 1, 2, 1, 3])
         sage: m
         [3 1 2 1 1 2 2 2]
         [1 0 1 2 2 1 2 2]
@@ -116,7 +120,7 @@ def WL(mat, fix_colors=True, algorithm="STABIL"):
         [7 6 4 6 6 4 0 4]
         [3 5 3 2 2 3 2 1]
     
-    ALGORITHM:
+    NOTES:
     
     Uses a reimplementation of STABIL by Keshav Kini, based on original work by
     Luitpold Babel and Dmitrii Pasechnik as described in [Bab]_.
@@ -127,6 +131,10 @@ def WL(mat, fix_colors=True, algorithm="STABIL"):
        Implementation of the Weisfeiler-Leman Algorithm. arXiv preprint
        1002.1921v1.
     
+    AUTHORS:
+
+    - Keshav Kini (2010-12-10)
+
     """
     cdef unsigned long* c_matrix
     cdef unsigned long c_d
@@ -192,6 +200,7 @@ def GraphWL(g, digraph=True, ignore_weights=False):
     
     Refine the product with itself of the cyclic graph on five points::
     
+        sage: from sage.graphs.wlrefine import GraphWL
         sage: g = graphs.CycleGraph(5)
         sage: gg = g.cartesian_product(g)
         sage: gg2 = GraphWL(gg)
@@ -200,9 +209,13 @@ def GraphWL(g, digraph=True, ignore_weights=False):
         sage: set(gg2.edge_labels())
         set([1, 2, 3, 4, 5])
     
-    ALGORITHM:
+    NOTES:
     
     This is a wrapper for the WL() function.
+
+    AUTHORS:
+
+    - Keshav Kini (2010-12-10)
     
     """
     
