@@ -14,7 +14,7 @@
     details of the algorithm and a discussion of its history, purpose, and applications, please see the paper linked
     above, which is free-access.
     
-    As the original implementation was released under the GNU General Public License v3, so too is this file and the
+    As the original implementation was released under the GNU General Public License v2+, so too is this file and the
     associated helper files.
     
     - Keshav Kini <kini@member.ams.org>, 2010-10-05

@@ -1,4 +1,6 @@
 r"""
+Weisfeiler-Leman algorithm
+
 The Weisfeiler-Leman algorithm for finding the coarsest coherent refinement of
 a partition of `\Omega \times \Omega` for some finite set Omega. Applicable
 to colored digraphs as a recoloration that refines the partition of arcs and
@@ -9,6 +11,7 @@ the graph is a refinement.
 AUTHORS:
 
 - Keshav Kini
+
 - Dmitrii Pasechnik
 
 EXAMPLES:
@@ -115,8 +118,8 @@ def WL(mat, fix_colors=True, algorithm="STABIL"):
     
     ALGORITHM:
     
-    Uses STABIL, as developed by Luitpold Babel and Dmitrii Pasechnik and
-    described in [Bab]_.
+    Uses a reimplementation of STABIL by Keshav Kini, based on original work by
+    Luitpold Babel and Dmitrii Pasechnik as described in [Bab]_.
     
     REFERENCES:
     
