@@ -10,29 +10,29 @@ the graph is a refinement.
 
 AUTHORS:
 
-- Keshav Kini (2010-10-14)
+- Keshav Kini (2010-12-16)
 
 EXAMPLES:
 
 Refine the product with itself of the cyclic graph on five points::
 
-    sage: from sage.graphs.wlrefine import GraphWL
-    sage: g = graphs.CycleGraph(5)
-    sage: gg = g.cartesian_product(g)
-    sage: gg2 = GraphWL(gg)
-    sage: gg2
+    >>> from sage.graphs.wlrefine import GraphWL
+    >>> g = graphs.CycleGraph(5)
+    >>> gg = g.cartesian_product(g)
+    >>> gg2 = GraphWL(gg)
+    >>> gg2
     Looped digraph on 25 vertices
-    sage: set(gg2.edge_labels())
+    >>> set(gg2.edge_labels())
     set([1, 2, 3, 4, 5])
 
-Refine a certain test matrix::
+Refine a test matrix::
 
-    sage: from sage.graphs.wlrefine import WL
-    sage: m = Matrix(8, 8, [3, 1, 2, 1, 1, 2, 2, 2, 1, 0, 1, 2, 2, 1, 2, 2, 2,
+    >>> from sage.graphs.wlrefine import WL
+    >>> m = Matrix(8, 8, [3, 1, 2, 1, 1, 2, 2, 2, 1, 0, 1, 2, 2, 1, 2, 2, 2,
     ...   1, 3, 1, 2, 2, 1, 2, 1, 2, 1, 0, 2, 2, 2, 1, 1, 2, 2, 2, 0, 1, 2,
     ...   1, 2, 1, 2, 2, 1, 3, 1, 2, 2, 2, 1, 2, 2, 1, 0, 1, 2, 2, 2, 1, 1,
     ...   2, 1, 3])
-    sage: m
+    >>> m
     [3 1 2 1 1 2 2 2]
     [1 0 1 2 2 1 2 2]
     [2 1 3 1 2 2 1 2]
@@ -41,8 +41,8 @@ Refine a certain test matrix::
     [2 1 2 2 1 3 1 2]
     [2 2 1 2 2 1 0 1]
     [2 2 2 1 1 2 1 3]
-    sage: m2 = WL(m)
-    sage: m2
+    >>> m2 = WL(m)
+    >>> m2
     [1 2 3 2 2 3 5 3]
     [4 0 4 6 6 4 6 7]
     [3 2 1 2 5 3 2 3]
@@ -53,10 +53,8 @@ Refine a certain test matrix::
     [3 5 3 2 2 3 2 1]
 
 """
-# XXX Implicitly continued lines in the sage interpreter start with "....: ",
-# not "... "; doctests do not work unless we use "... ", though. Something to
-# fix? EDIT: this is handled by sage trac #10458. Please change the line
-# continuation prompts appropriately if/when #10458 is resolved.
+# XXX Using >>>/... doctest notation until trac #10458 is resolved. Please
+# change to sage:/....: later if possible.
 
 #   wlrefine.pyx
 #   
@@ -82,8 +80,10 @@ def WL(mat, fix_colors=True, algorithm="STABIL"):
       consecutive integers from 0 to some d-1 and whose diagonal entries do
       not occur outside the diagonal
 
-    - ``fix_colors`` -- (default: true) if true, we attempt to fix malformed
-      data. This process may also alter otherwise valid data.
+    - ``fix_colors`` -- (default: true) if true, we enforce the separation of
+      colors on the diagonal from colors off the diagonal. Optional because
+      it may be desirable not to do so (it is not a necessary condition for
+      the formation of a cellular algebra).
 
     - ``algorithm`` -- (default: "STABIL") choose the algorithm to use.
       Currently supported algorithms are: "STABIL" (default)
@@ -94,14 +94,14 @@ def WL(mat, fix_colors=True, algorithm="STABIL"):
     
     EXAMPLES:
     
-    Refine a certain test matrix::
+    Refine a test matrix::
         
-        sage: from sage.graphs.wlrefine import WL
-        sage: m = Matrix(8, 8, [3, 1, 2, 1, 1, 2, 2, 2, 1, 0, 1, 2, 2, 1, 2,
+        >>> from sage.graphs.wlrefine import WL
+        >>> m = Matrix(8, 8, [3, 1, 2, 1, 1, 2, 2, 2, 1, 0, 1, 2, 2, 1, 2,
         ...   2, 2, 1, 3, 1, 2, 2, 1, 2, 1, 2, 1, 0, 2, 2, 2, 1, 1, 2, 2, 2,
         ...   0, 1, 2, 1, 2, 1, 2, 2, 1, 3, 1, 2, 2, 2, 1, 2, 2, 1, 0, 1, 2,
         ...   2, 2, 1, 1, 2, 1, 3])
-        sage: m
+        >>> m
         [3 1 2 1 1 2 2 2]
         [1 0 1 2 2 1 2 2]
         [2 1 3 1 2 2 1 2]
@@ -110,8 +110,8 @@ def WL(mat, fix_colors=True, algorithm="STABIL"):
         [2 1 2 2 1 3 1 2]
         [2 2 1 2 2 1 0 1]
         [2 2 2 1 1 2 1 3]
-        sage: m2 = WL(m)
-        sage: m2
+        >>> m2 = WL(m)
+        >>> m2
         [1 2 3 2 2 3 5 3]
         [4 0 4 6 6 4 6 7]
         [3 2 1 2 5 3 2 3]
@@ -120,6 +120,47 @@ def WL(mat, fix_colors=True, algorithm="STABIL"):
         [3 2 3 5 2 1 2 3]
         [7 6 4 6 6 4 0 4]
         [3 5 3 2 2 3 2 1]
+
+    WL() optionally enforces diagonal/off-diagonal separation and mandatorily
+    enforces reversibility of the matrix (the condition that the transpose of
+    the matrix must be a recoloring of the matrix).
+    
+    Try a non-reversible matrix without diagonal/off-diagonal separation, with
+    and without "color fixing"::
+        
+        >>> from sage.graphs.wlrefine import WL
+        >>> m = Matrix(8, 8, [1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1,  
+        ...   1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 
+        ...   0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 1])
+        >>> m
+        [1 1 1 1 0 0 0 0]
+        [1 1 1 1 0 0 0 0]
+        [1 1 1 1 0 0 0 0]
+        [1 1 1 1 0 0 0 0]
+        [0 0 0 0 1 0 0 1]
+        [0 0 0 0 1 0 0 1]
+        [0 0 0 0 1 0 0 1]
+        [0 0 0 0 1 0 0 1]
+        >>> m2 = WL(m)
+        >>> m2
+        [ 1  3  3  3  2  7  7  2]
+        [ 3  1  3  3  2  7  7  2]
+        [ 3  3  1  3  2  7  7  2]
+        [ 3  3  3  1  2  7  7  2]
+        [ 8  8  8  8  6  4  4 11]
+        [ 9  9  9  9  5  0 10  5]
+        [ 9  9  9  9  5 10  0  5]
+        [ 8  8  8  8 11  4  4  6]
+        >>> m3 = WL(m, fix_colors=False)
+        >>> m3
+        [1 1 1 1 0 4 4 0]
+        [1 1 1 1 0 4 4 0]
+        [1 1 1 1 0 4 4 0]
+        [1 1 1 1 0 4 4 0]
+        [5 5 5 5 8 2 2 8]
+        [6 6 6 6 3 7 7 3]
+        [6 6 6 6 3 7 7 3]
+        [5 5 5 5 8 2 2 8]
     
     NOTES:
     
@@ -201,13 +242,13 @@ def GraphWL(g, digraph=True, ignore_weights=False):
     
     Refine the product with itself of the cyclic graph on five points::
     
-        sage: from sage.graphs.wlrefine import GraphWL
-        sage: g = graphs.CycleGraph(5)
-        sage: gg = g.cartesian_product(g)
-        sage: gg2 = GraphWL(gg)
-        sage: gg2
+        >>> from sage.graphs.wlrefine import GraphWL
+        >>> g = graphs.CycleGraph(5)
+        >>> gg = g.cartesian_product(g)
+        >>> gg2 = GraphWL(gg)
+        >>> gg2
         Looped digraph on 25 vertices
-        sage: set(gg2.edge_labels())
+        >>> set(gg2.edge_labels())
         set([1, 2, 3, 4, 5])
     
     NOTES:
