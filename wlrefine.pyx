@@ -55,7 +55,8 @@ Refine a certain test matrix::
 """
 # XXX Implicitly continued lines in the sage interpreter start with "....: ",
 # not "... "; doctests do not work unless we use "... ", though. Something to
-# fix?
+# fix? EDIT: this is handled by sage trac #10458. Please change the line
+# continuation prompts appropriately if/when #10458 is resolved.
 
 #   wlrefine.pyx
 #   

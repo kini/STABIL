@@ -17,7 +17,7 @@
     As the original implementation was released under the GNU General Public License v2+, so too is this file and the
     associated helper files.
     
-    - Keshav Kini <kini@member.ams.org>, 2010-10-05
+    - Keshav Kini <kini@member.ams.org>, 2010-12-16
 */
 
 #define ALLOC(X, Y) ((X) = malloc((Y) * sizeof *(X)))
@@ -27,9 +27,11 @@
     #include "STABIL-tests.h"
     #define DEBUG_PRINT_MATRIX() print_matrix(matrix, n, *d);
     #define DEBUG_PRINT_TRIPLES() print_triples(triples, theaders, hnav1, k, *d)
+    #define DEBUG_PRINT(X) (printf(X))
 #else
     #define DEBUG_PRINT_MATRIX()
     #define DEBUG_PRINT_TRIPLES()
+    #define DEBUG_PRINT(X)
 #endif
 
 #include <stdlib.h>
@@ -82,13 +84,17 @@ int STABIL(unsigned long* matrix, unsigned long n, unsigned long* d)
     /* copies */
     struct edge* uv_;
     
+    /* check parameters */
+    if (n > 0xFFFF)
+        return EXIT_BAD_INPUT;                                                  /* unsigned long could be as small as 4 bytes long, and we need to handle n^2 and d <= n^2 */
+
     /* check matrix for shenanigans */
     if (
         !CALLOC(color_found, *d)
     )
         return EXIT_ALLOC_ERROR;
     for (ab = 0, a = 0; a < n; ++a)
-        for (b = 0; b < n; ++b, ++ab) {
+        for (b = 0; b < n; ++b, ++ab) { 
             if (matrix[ab] < 0 || matrix[ab] >= *d)
                 return EXIT_BAD_INPUT;                                          /* die if out-of-range color found */
             color_found[matrix[ab]] = 1;                                        /* mark this color as found */
@@ -97,6 +103,7 @@ int STABIL(unsigned long* matrix, unsigned long n, unsigned long* d)
         if (!color_found[i])
             return EXIT_BAD_INPUT;                                              /* die if any color in range is not found */
     free(color_found);                                                          /* we don't care about this anymore */
+    DEBUG_PRINT("Matrix read successfully\n");
     DEBUG_PRINT_MATRIX();
         
 /*  STEP 0
@@ -107,8 +114,8 @@ int STABIL(unsigned long* matrix, unsigned long n, unsigned long* d)
         !ALLOC(edges, n*n)
     )
         return EXIT_ALLOC_ERROR;
-    for (ab = 0, a = 0; a < n; ++a)
-        for (b = 0; b < n; ++b, ++ab) {
+    for (ab = n*n - 1, a = n - 1; a < n; --a)                                   /* go backwards because we're loading linked lists by prepending new elements */
+        for (b = n - 1; b < n; --b, --ab) {                                     /* n^2 < sizeof(unsigned long) */
             edges[ab].row = a;
             edges[ab].col = b;
             edges[ab].next = color_classes[matrix[ab]];                         /* prepend this edge to the correct linked list... */
@@ -136,7 +143,15 @@ int STABIL(unsigned long* matrix, unsigned long n, unsigned long* d)
         c = d_;                                                                 /* c marks the first new color added this time */
         opposites[0] = matrix[uv_->col*n + uv_->row];                           /* the color of the reversal of the first edge of color i, which we will associate with the original color i */
         do {                                                                    /* continue to check all edges of color i */
-            j = matrix[uv->col*n + uv->row];
+            k = matrix[uv->row*n + uv->col];
+            if (k != i) {                                                       /* cleanup from a previous iteration where i was equal to j */
+                uv_->next = uv->next;                                           /* excise uv from the linked list of color class i */
+                uv->next = color_classes[k];                                    /* prepend uv to the linked list of color class k */
+                color_classes[k] = uv;                                          /* rebase the linked list */
+                continue;                                                       /* this edge was already "dealt with" when we processed its reverse earlier, so we're done with it */
+            }
+
+            j = matrix[uv->col*n + uv->row];                                    /* check reverse edge's color */
             if (j == opposites[0]) {
                 uv_ = uv;
                 continue;                                                       /* this edge is part of the "original" color class */
@@ -156,11 +171,20 @@ int STABIL(unsigned long* matrix, unsigned long n, unsigned long* d)
                 uv->next = NULL;                                                /* create a new linked list with uv */
                 color_classes[k] = uv;                                          /* and let color_classes[k] point to it */
             }
+            
+            if (i == j) {                                                       /* if the reversal is the same color as the edge, both colors need to be changed since we are creating the "symmetric
+                                                                                    part" of the color class i (== j). This is already done if i = opposites[0], of course. As it is troublesome to
+                                                                                    find the reversed edge in color_classes[i], we'll just change its color in the matrix and skip it when we come to
+                                                                                    it (it must be later along in color_classes[i] than the current edge otherwise we would have reached this pair in
+                                                                                    the reverse order already). */
+                matrix[uv->col*n + uv->row] = k;
+            }
             matrix[uv->row*n + uv->col] = k;                                    /* update the matrix */
         } while ((uv = uv_->next));                                             /* next edge of color i */
     }
     free(opposites);                                                            /* we don't care about this anymore */
     *d = d_;                                                                    /* update the dimension of the configuration */
+    DEBUG_PRINT("Matrix \"Symmetrized\"\n");
     DEBUG_PRINT_MATRIX();
     
 /*  STEP 1

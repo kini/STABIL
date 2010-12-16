@@ -32,10 +32,10 @@ int print_triples(struct triple* triples, struct theader* theaders, struct thead
     
     printf("Color %lu out of a current %lu colors has so far been refined as follows:", k, d);
     for (hnav = theaders; hnav < hnav1; hnav++) {
-        printf("\n[%lu: color %lu, %lu triples, LDR = (", hnav - theaders, hnav->color, hnav->len);
-        if(hnav->left) printf("%lu,", hnav->left - theaders); else printf("_,");
-        if(hnav->down) printf("%lu,", hnav->down - theaders); else printf("_,");
-        if(hnav->right) printf("%lu)]", hnav->right - theaders); else printf("_)]");
+        printf("\n[%td: color %lu, %lu triples, LDR = (", hnav - theaders, hnav->color, hnav->len);
+        if(hnav->left) printf("%td,", hnav->left - theaders); else printf("_,");
+        if(hnav->down) printf("%td,", hnav->down - theaders); else printf("_,");
+        if(hnav->right) printf("%td)]", hnav->right - theaders); else printf("_)]");
         for (i = 0, tnav = hnav->data; i < hnav->len; ++i, ++tnav)
             printf(" (%lu,%lu)x%lu;", tnav->uw, tnav->wv, tnav->coeff);
     }

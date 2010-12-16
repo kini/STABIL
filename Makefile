@@ -1,6 +1,6 @@
 CC=gcc
 ## Release
-#CFLAGS=-O2
+#CFLAGS=-O2 -Wall
 ## Development
 CFLAGS=-g -Wall
 ## Debugging
