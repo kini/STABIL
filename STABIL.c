@@ -1,22 +1,22 @@
 /*  STABIL.c
-    
+
     This file contains an adaptation of the program "STABIL" written by Luitpold Babel and Dmitrii Pasechnik and
     described in the paper "Program Implementation of the Weisfeiler-Leman Algorithm", arXiv:1002.1921v1 . The paper is
     available at <http://arxiv.org/abs/1002.1921v1>, and the original code is made available by Dmitrii Pasechnik at
     <http://bit.ly/aVF0BH>.
-    
-    The adaptation consists of much rephrasing / renaming, fleshed-out code comments, and a Cython wrapper to
-    facilitate usage of the program from Sage or other Python-based environments. Preprocessor constants for hard
-    limiting of memory usage have also been done away with in favor of dynamic allocation. The storage requirement has
-    been increased (though not beyond the previous complexity order) in the interest of type safety. In the interest of
-    generality, the input conditions have been relaxed to allow for cellular (as opposed to coherent) refinement.
-    Also, some assumptions made about the input are done away with in the interest of robustness. For the theoretical
-    details of the algorithm and a discussion of its history, purpose, and applications, please see the paper linked
-    above, which is free-access.
-    
+
+    The adaptation consists of much rephrasing / renaming, fleshed-out code comments, and a Cython wrapper to facilitate
+    usage of the program from Sage or other Python-based environments. Preprocessor constants for hard limiting of
+    memory usage have also been done away with in favor of dynamic allocation. The storage requirement has been
+    increased (though not beyond the previous complexity order) in the interest of type safety. In the interest of
+    generality, the input conditions have been relaxed to allow for cellular (as opposed to coherent) refinement.  Also,
+    some assumptions made about the input are done away with in the interest of robustness. For the theoretical details
+    of the algorithm and a discussion of its history, purpose, and applications, please see the paper linked above,
+    which is free-access.
+
     As the original implementation was released under the GNU General Public License v2+, so too is this file and the
     associated helper files.
-    
+
     - Keshav Kini <kini@member.ams.org>, 2010-12-16
 */
 
@@ -38,7 +38,7 @@
 #include "STABIL.h"
 
 /*  STABIL()
-    
+
     STABIL, an implementation of the Weisfeiler-Leman refinement algorithm for coherent configurations. The function
     accepts a coherent configuration in the form of an integer matrix (called a generalized graph) "matrix", which is
     equal to $\sum_{i=0}^{d-1} i A_i$, where $A_0,\dots,A_{d-1}$ are the elements of the coherent configuration as
@@ -52,7 +52,7 @@ int STABIL(unsigned long* matrix, unsigned long n, unsigned long* d)
                                                                                     computation more than once if n^2 blocks proves insufficient (i.e. too much disagreement in predicted structure
                                                                                     coefficients) */
     const unsigned long theaders_len = n*n;                                     /* naively, up to n^2 new colors could be discovered per old color per iteration, though this is actually impossible */
-    
+
     /* (pointers to) large-scale structures */
     struct edge** color_classes;                                                /* a list of root pointers of linked lists of edge structs, indexed by color */
     struct edge* edges;                                                         /* memory for the linked lists in struct edge** color_classes to live in */
@@ -62,7 +62,7 @@ int STABIL(unsigned long* matrix, unsigned long n, unsigned long* d)
     struct triple2* triple2s;                                                   /* memory for the linked lists in struct triple2** uw_classes to live in */
     struct triple* triples;                                                     /* memory for storing predicted structure coefficients p_{i,j}^k for fixed k */
     struct theader* theaders;                                                   /* memory for storing metadata about the predicted structure coefficient lists */
-    
+
     /* values */
     char stable, overflow;                                                      /* flags */
     unsigned long a, b, i, j, k;                                                /* counters - a,b are vertices, i,j,k are colors corresponding to the indices of p_{i,j}^k, the structure coefficients */
@@ -70,7 +70,7 @@ int STABIL(unsigned long* matrix, unsigned long n, unsigned long* d)
     unsigned long ab, ua, av;                                                   /* 2-dimensional iterators */
     unsigned long d_;                                                           /* next available color for new color classes within the refinement loop on a fixed color k; current total number of
                                                                                     color classes */
-    
+
     /* navigational pointers */
     struct edge* uv;                                                            /* pointer to current edge (u,v) */
     struct triple2* newt2;                                                      /* pointer to next free position in block "triple2s" */
@@ -80,10 +80,10 @@ int STABIL(unsigned long* matrix, unsigned long n, unsigned long* d)
     struct theader* hnav2;
     struct triple* tnav1;                                                       /* pointers for navigation in the block "triples" */
     struct triple* tnav2;
-    
+
     /* copies */
     struct edge* uv_;
-    
+
     /* check parameters */
     if (n > 0xFFFF)
         return EXIT_BAD_INPUT;                                                  /* unsigned long could be as small as 4 bytes long, and we need to handle n^2 and d <= n^2 */
@@ -94,7 +94,7 @@ int STABIL(unsigned long* matrix, unsigned long n, unsigned long* d)
     )
         return EXIT_ALLOC_ERROR;
     for (ab = 0, a = 0; a < n; ++a)
-        for (b = 0; b < n; ++b, ++ab) { 
+        for (b = 0; b < n; ++b, ++ab) {
             if (matrix[ab] < 0 || matrix[ab] >= *d)
                 return EXIT_BAD_INPUT;                                          /* die if out-of-range color found */
             color_found[matrix[ab]] = 1;                                        /* mark this color as found */
@@ -105,7 +105,7 @@ int STABIL(unsigned long* matrix, unsigned long n, unsigned long* d)
     free(color_found);                                                          /* we don't care about this anymore */
     DEBUG_PRINT("Matrix read successfully\n");
     DEBUG_PRINT_MATRIX();
-        
+
 /*  STEP 0
     populate struct edge** color_classes
 */
@@ -121,10 +121,10 @@ int STABIL(unsigned long* matrix, unsigned long n, unsigned long* d)
             edges[ab].next = color_classes[matrix[ab]];                         /* prepend this edge to the correct linked list... */
             color_classes[matrix[ab]] = edges + ab;                             /* ... and rebase the linked list */
         }
-    
+
 /*  STEP 0.5
     enforce closure under edge reversal
-    
+
     Note: while the original Weisfeiler-Leman algorithm did this after every iteration, it actually only needs to be
     done once at the beginning of the algorithm. See O. Bastert's paper "New Ideas for Canonically Computing Graph
     Algebras" for a proof of this fact, where it is labeled Lemma 2.1.
@@ -171,7 +171,7 @@ int STABIL(unsigned long* matrix, unsigned long n, unsigned long* d)
                 uv->next = NULL;                                                /* create a new linked list with uv */
                 color_classes[k] = uv;                                          /* and let color_classes[k] point to it */
             }
-            
+
             if (i == j) {                                                       /* if the reversal is the same color as the edge, both colors need to be changed since we are creating the "symmetric
                                                                                     part" of the color class i (== j). This is already done if i = opposites[0], of course. As it is troublesome to
                                                                                     find the reversed edge in color_classes[i], we'll just change its color in the matrix and skip it when we come to
@@ -186,7 +186,7 @@ int STABIL(unsigned long* matrix, unsigned long n, unsigned long* d)
     *d = d_;                                                                    /* update the dimension of the configuration */
     DEBUG_PRINT("Matrix \"Symmetrized\"\n");
     DEBUG_PRINT_MATRIX();
-    
+
 /*  STEP 1
     do computation
 */
@@ -208,7 +208,7 @@ int STABIL(unsigned long* matrix, unsigned long n, unsigned long* d)
             uv_ = uv;                                                           /* old (u,v) */
             if (uv->next == NULL)
                 continue;                                                       /* there's only one edge of color k, and thus one (true) prediction for each p_{i,j}^k, nothing to do */
-            
+
             do {                                                                /* for each edge (u,v) with color k... */
                 if (overflow) {                                                 /* no more space for new coeff lists; just set to the last color */
                     uv_->next = uv->next;                                       /* when (u,v) is the first edge of its color, overflow will not have occurred, so here uv_ is edge previous to uv */
@@ -217,8 +217,8 @@ int STABIL(unsigned long* matrix, unsigned long n, unsigned long* d)
                     uv = uv_->next;                                             /* move on to next (u,v) of original color k */
                     continue;
                 }
-                
-                
+
+
 /*  STEP 1(i)
     compute the predicted structure coefficients (in struct triple2 linked lists)
 */
@@ -232,7 +232,7 @@ int STABIL(unsigned long* matrix, unsigned long n, unsigned long* d)
                 ) {
                     i = matrix[ua];                                             /* color of (u,w) */
                     j = matrix[av];                                             /* color of (w,v) */
-                    
+
                     if (!uw_classes[i]) {                                       /* begin a linked list for .uw = i; this will be stored in increasing order of j */
                         *newt2 = (struct triple2){j, 1, NULL};
                         uw_classes[i] = newt2++;
@@ -260,8 +260,8 @@ int STABIL(unsigned long* matrix, unsigned long n, unsigned long* d)
                         }
                     }
                 }
-                
-                
+
+
 /*  STEP 1(ii)
     collect the nonzero predicted structure coefficients into the block "triples"
 */
@@ -275,8 +275,8 @@ int STABIL(unsigned long* matrix, unsigned long n, unsigned long* d)
                         t2nav1 = t2nav1->next;
                     }                                                           /* note: this is a while rather than a do because this linked list may be empty */
                 }
-                
-                
+
+
 /*  STEP 1(iii)
     search the block MEMORY, here called "struct triple* triples", for structure coefficient prediction lists matching
     the one produced by (u,v); if such is found, set (u,v) to that color, else create a new color for (u,v)
@@ -288,11 +288,11 @@ int STABIL(unsigned long* matrix, unsigned long n, unsigned long* d)
     The coefficient lists, one for each class of edges of color k, live in the memory block "triples", and are arranged
     in several linked lists, each containing coefficient lists of a certain length. These linked lists are in turn
     linked together into a doubly linked list, which is ordered 'left-to-right' in increasing order of the 'certain
-    length' belonging to its elements. This structural information, and indeed the demarcations of the coefficient
-    lists themselves, are maintained by a series of headers in the memory block "theaders".The following procedure will
-    start at the beginning of "theaders" (where the chronologically first coefficient list's data was written) and
-    search through this structure looking for a match with the current (u,v)'s coefficient list, or alternatively a
-    place to insert it into the structure if it represents a new color class.
+    length' belonging to its elements. This structural information, and indeed the demarcations of the coefficient lists
+    themselves, are maintained by a series of headers in the memory block "theaders".The following procedure will start
+    at the beginning of "theaders" (where the chronologically first coefficient list's data was written) and search
+    through this structure looking for a match with the current (u,v)'s coefficient list, or alternatively a place to
+    insert it into the structure if it represents a new color class.
 */
                     hnav2 = theaders;                                           /* start at the header of the first edge of color k, wherever it may be in the structure */
                     while (hnav2->len > hnav1->len && hnav2->left)              /* move left until *hnav2 <= *hnav1 in length or reach left end */
@@ -343,7 +343,7 @@ int STABIL(unsigned long* matrix, unsigned long n, unsigned long* d)
                         } while ((hnav2 = hnav2->down));
                     }
                 }
-                
+
                 if (hnav1->color != k) {                                        /* this won't happen on the first (u,v), so inside we can assume uv_ is uv's predecessor */
                     uv_->next = uv->next;                                       /* remove uv from color class k, which we are iterating through */
                     uv->next = color_classes[hnav1->color];                     /* prepend to uv to newly refined color's linked list */
@@ -351,7 +351,7 @@ int STABIL(unsigned long* matrix, unsigned long n, unsigned long* d)
                 } else
                     uv_ = uv;                                                   /* uv has not been recolored, so move along color class k normally */
                 uv = uv_->next;                                                 /* get next uv */
-                
+
                 if (hnav1->color == d_) {                                       /* if a new color was added, go to next free color and next free space for a header in block "theaders" */
                     ++d_;
                     ++hnav1;
@@ -360,42 +360,42 @@ int STABIL(unsigned long* matrix, unsigned long n, unsigned long* d)
                     ++hnav1;
                 else
                     tnav1 = hnav1->data;                                        /* tnav1 should by this point naturally be after hnav1's data block, and needs to be moved back */
-                
+
                 if (theaders + theaders_len - hnav1 < 1 || triples + triples_len - tnav1 < n) {
                     overflow = 1;                                               /* if no more space for coeff lists and headers, mark an overflow */
                     ++d_;                                                       /* increment d_ (again, maybe) in advance to provide a color class of edges (d-1) found after overflow */
                 }
             } while (uv);                                                       /* move on to the next color when this color is exhausted */
-            
+
             if (overflow && !color_classes[d_ - 1])                             /* in obscure cases where we overflow on the last step after refining to the discrete configuration (with n^2 colors),
                                                                                     it is possible that d_ might at this stage be n^2 + 1, hence the necessity for color_classes to be calloc'd to
                                                                                     length n^2 + 1 rather than simply n^2. */
                 --d_;                                                           /* undo provisional incrementation of d_ performed above if no new edges were added after we went into overflow mode */
-            
+
             for (i = *d; i < d_; ++i) {                                         /* save color changes to matrix; no need to check i < *d as old color classes are only shrunk */
                 uv = color_classes[i];
                 do {
                     matrix[uv->row*n + uv->col] = i;
                 } while ((uv = uv->next));
             }
-            
+
             if (d_ > *d) {                                                      /* more color classes have been added during this iteration */
                 *d = d_;
                 stable = 0;
             }
-            
+
             DEBUG_PRINT_TRIPLES();
         }                                                                       /* next color */
-        
+
         DEBUG_PRINT_MATRIX();
     } while(!stable);                                                           /* continue until the process stabilizes */
-    
+
     free(color_classes);
     free(edges);
     free(uw_classes);
     free(triple2s);
     free(theaders);
     free(triples);
-    
+
     return EXIT_SUCCESS;
 }

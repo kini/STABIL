@@ -57,15 +57,13 @@ Refine a test matrix::
 # change to sage:/....: later if possible.
 
 #   wlrefine.pyx
-#   
+#
 #   See STABIL.c for an explanation.
-#   
+#
 #   - Keshav Kini <kini@member.ams.org>, 2010-10-14
 #
 
 from libc.stdlib cimport malloc, free
-import sage.matrix.constructor
-import sage.graphs.graph
 
 cdef extern from "STABIL.c":
     int STABIL(unsigned long* matrix, unsigned long n, unsigned long* d)
@@ -73,9 +71,9 @@ cdef extern from "STABIL.c":
 def WL(mat, fix_colors=True, algorithm="STABIL"):
     r"""
     Perform Weisfeiler-Leman refinement on a matrix.
-    
+
     INPUT:
-    
+
     - ``mat`` -- a square Sage matrix whose set of entries is the set of
       consecutive integers from 0 to some d-1 and whose diagonal entries do
       not occur outside the diagonal
@@ -87,13 +85,13 @@ def WL(mat, fix_colors=True, algorithm="STABIL"):
 
     - ``algorithm`` -- (default: "STABIL") choose the algorithm to use.
       Currently supported algorithms are: "STABIL" (default)
-    
+
     OUTPUT:
-    
+
     - The Weisfeiler-Leman refinement of mat
-    
+
     EXAMPLES:
-    
+
     Refine a test matrix::
         
         >>> from sage.graphs.wlrefine import WL
@@ -124,13 +122,13 @@ def WL(mat, fix_colors=True, algorithm="STABIL"):
     WL() optionally enforces diagonal/off-diagonal separation and mandatorily
     enforces reversibility of the matrix (the condition that the transpose of
     the matrix must be a recoloring of the matrix).
-    
+
     Try a non-reversible matrix without diagonal/off-diagonal separation, with
     and without "color fixing"::
         
         >>> from sage.graphs.wlrefine import WL
-        >>> m = Matrix(8, 8, [1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1,  
-        ...   1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 
+        >>> m = Matrix(8, 8, [1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1,
+        ...   1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0,
         ...   0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 1])
         >>> m
         [1 1 1 1 0 0 0 0]
@@ -161,30 +159,32 @@ def WL(mat, fix_colors=True, algorithm="STABIL"):
         [6 6 6 6 3 7 7 3]
         [6 6 6 6 3 7 7 3]
         [5 5 5 5 8 2 2 8]
-    
+
     NOTES:
-    
+
     Uses a reimplementation of STABIL by Keshav Kini, based on original work by
     Luitpold Babel and Dmitrii Pasechnik as described in [Bab]_.
-    
+
     REFERENCES:
-    
+
     .. [Bab] L. Babel, I. V. Chuvaeva, M. Klin, D. V. Pasechnik. Program
        Implementation of the Weisfeiler-Leman Algorithm. arXiv preprint
        1002.1921v1.
-    
+
     AUTHORS:
 
     - Keshav Kini (2010-12-10)
 
     """
+    from sage.matrix.constructor import Matrix
+
     cdef unsigned long* c_matrix
     cdef unsigned long c_d
     if (mat.nrows() != mat.ncols()):
         raise ValueError, "Malformed input data! Please provide a square matrix."
     n = mat.nrows()
     mat = [x for y in mat for x in y]
-    
+
     # fix colors, or not
     if (fix_colors):
         diag_map = dict([(y,x) for (x,y) in enumerate(set([mat[i*n+i] for i in range(n)]))])
@@ -214,34 +214,34 @@ def WL(mat, fix_colors=True, algorithm="STABIL"):
             raise MemoryError, "Could not allocate enough memory!"
         elif (result == 3):
             raise OverflowError, "Predicted overflow! Please do not use matrices larger than 65535x65535."
-        result = sage.matrix.constructor.Matrix(n, n, [c_matrix[x] for x in range(n*n)])
+        result = Matrix(n, n, [c_matrix[x] for x in range(n*n)])
     finally:
         free(c_matrix)
-    
+
     return result
 
 def GraphWL(g, digraph=True, ignore_weights=False):
     r"""
     Perform Weisfeiler-Leman refinement on a graph.
-    
+
     INPUT:
-    
+
     - ``g`` -- a Sage looped graph with edge weights representing colors
-    
+
     - ``digraph`` -- (default: True) if false, return an undirected graph
       with colors merged by Sage's coercion (?), which may be desirable in
       some situations
-    
+
     - ``ignore_weights`` -- (default: False) if true, ignore edge weights
-    
+
     OUTPUT:
-    
+
     - g after performing Weisfeiler-Leman refinement on its coloring
-    
+
     EXAMPLES:
-    
+
     Refine the product with itself of the cyclic graph on five points::
-    
+        
         >>> from sage.graphs.wlrefine import GraphWL
         >>> g = graphs.CycleGraph(5)
         >>> gg = g.cartesian_product(g)
@@ -250,24 +250,24 @@ def GraphWL(g, digraph=True, ignore_weights=False):
         Looped digraph on 25 vertices
         >>> set(gg2.edge_labels())
         set([1, 2, 3, 4, 5])
-    
+
     NOTES:
-    
+
     This is a wrapper for the WL() function.
 
     AUTHORS:
 
     - Keshav Kini (2010-12-10)
-    
+
     """
-    
+    from sage.graphs.graph import Graph, DiGraph
+
     if (not g.weighted() or ignore_weights) and not g.has_loops():
         mat = WL(g.adjacency_matrix() + 2, fix_colors=False)                    # g.adjacency_matrix() is a 0-1 matrix so setting the diagonal to 2 satisfies the color conditions for the algorithm
     else:
         mat = WL(g.weighted_adjacency_matrix())
-    
-    if digraph:
-        return sage.graphs.graph.DiGraph(mat, format='weighted_adjacency_matrix')
-    else:
-        return sage.graphs.graph.Graph(mat, format='weighted_adjacency_matrix')
 
+    if digraph:
+        return DiGraph(mat, pos=g.get_pos(), format='weighted_adjacency_matrix')
+    else:
+        return Graph(mat, pos=g.get_pos(), format='weighted_adjacency_matrix')

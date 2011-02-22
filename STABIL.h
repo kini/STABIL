@@ -1,7 +1,7 @@
 /*  STABIL.h
-    
+
     See STABIL.c for an explanation.
-    
+
     - Keshav Kini <kini@member.ams.org>, 2010-10-14
 */
 
