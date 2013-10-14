@@ -2,9 +2,9 @@ CC=gcc
 ## Release
 #CFLAGS=-O2 -Wall
 ## Development
-CFLAGS=-g -Wall
+#CFLAGS=-g -Wall
 ## Debugging
-#CFLAGS=-g -Wall -D DEBUG
+CFLAGS=-g -Wall -D DEBUG
 
 cli: main.c STABIL.c
 	$(CC) $(CFLAGS) -o STABIL main.c STABIL.c
